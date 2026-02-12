@@ -1,4 +1,6 @@
 import swaggerJsdoc from 'swagger-jsdoc';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const options: swaggerJsdoc.Options = {
   definition: {
@@ -184,7 +186,7 @@ const options: swaggerJsdoc.Options = {
       },
     ],
   },
-  apis: ['./src/openapi/**/*.yaml'],
+  apis: [path.join(path.dirname(fileURLToPath(import.meta.url)), 'openapi', '*.yaml')],
 };
 
 export const swaggerSpec = swaggerJsdoc(options);
