@@ -94,6 +94,51 @@ paths:
         '401':
           description: Unauthorized
 
+  /rooms/{id}/participants/{participantId}:
+    delete:
+      tags:
+        - Rooms
+      summary: Remove a participant from the room
+      description: Removes a participant from the room. The participant can join again later. Only the room owner can remove participants.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: Room ID
+        - in: path
+          name: participantId
+          required: true
+          schema:
+            type: string
+          description: Participant user ID to remove
+      responses:
+        '200':
+          description: Participant removed successfully
+        '400':
+          description: Cannot remove the room owner
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Only the room owner can remove participants
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Room not found or participant not in room
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+
   /rooms/{id}/voting/start:
     post:
       tags:

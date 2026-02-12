@@ -98,6 +98,44 @@ router.post("/rooms/:id/join", authenticate, (req: AuthRequest, res: Response) =
   res.status(200).send();
 });
 
+// Remove participant from room
+router.delete("/rooms/:id/participants/:participantId", authenticate, (req: AuthRequest, res: Response) => {
+  const { id, participantId } = req.params;
+  const userId = req.user!.id;
+
+  const room = store.getRoom(id);
+  if (!room) {
+    return res.status(404).json({ error: "Room not found" });
+  }
+
+  // Only owner can remove participants
+  if (room.owner !== userId) {
+    return res.status(403).json({ error: "Only the room owner can remove participants" });
+  }
+
+  // Check if participant exists
+  if (!room.participants.includes(participantId)) {
+    return res.status(404).json({ error: "Participant not found in room" });
+  }
+
+  // Cannot remove the owner
+  if (participantId === room.owner) {
+    return res.status(400).json({ error: "Cannot remove the room owner" });
+  }
+
+  // Remove participant
+  room.participants = room.participants.filter(id => id !== participantId);
+
+  // Also remove their vote if they had one
+  if (room.votes[participantId]) {
+    delete room.votes[participantId];
+  }
+
+  store.updateRoom(id, { participants: room.participants, votes: room.votes });
+
+  res.status(200).send();
+});
+
 // Get room state
 router.get("/rooms/:id", authenticate, (req: AuthRequest, res: Response) => {
   const { id } = req.params;
