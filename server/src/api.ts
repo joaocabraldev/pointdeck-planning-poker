@@ -2,6 +2,7 @@ import express from "express";
 import { createServer } from 'node:http';
 import { Server } from 'socket.io';
 import cors from "cors";
+import { ulid } from "ulid";
 
 const app = express();
 const server = createServer(app);
@@ -24,11 +25,10 @@ app.post("/session", (req, res) => {
   if (!name) {
     return res.status(400).json({ error: "Name is required" });
   }
-  const id = crypto.randomUUID();
-  const token = crypto.randomUUID();
+  const id = ulid();
+  const token = ulid();
   res.json({
     user: { id, name },
-    id,
     token,
   });
 });
@@ -36,14 +36,9 @@ app.post("/session", (req, res) => {
 // create rooms
 const sessions = new Map<string, { userId: string; roomId: string }>();
 app.post("/rooms", (req, res) => {
-  const { name } = req.body;
-  if (!name) {
-    return res.status(400).json({ error: "Name is required" });
-  }
-  const id = crypto.randomUUID();
+  const room_id = ulid();
   res.json({
-    id,
-    name,
+    room_id
   });
 });
 
