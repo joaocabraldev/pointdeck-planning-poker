@@ -4,11 +4,18 @@ import { useSessionStore } from "../../store/sessionStore";
 function Signup() {
   const [name, setName] = useState("");
   const signup = useSessionStore((s) => s.signup);
+  const isLoading = useSessionStore((s) => s.isLoading);
+  const error = useSessionStore((s) => s.error);
 
-  const handleSubmit = (e: React.SubmitEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (name.trim()) {
-      signup(name.trim());
+      try {
+        await signup(name.trim());
+      } catch (error) {
+        // Error is handled in the store
+        console.error('Signup failed:', error);
+      }
     }
   };
 
@@ -22,10 +29,12 @@ function Signup() {
           value={name}
           onChange={(e) => setName(e.target.value)}
           autoFocus
+          disabled={isLoading}
         />
-        <button type="submit" disabled={!name.trim()}>
-          Continue
+        <button type="submit" disabled={!name.trim() || isLoading}>
+          {isLoading ? 'Joining...' : 'Continue'}
         </button>
+        {error && <p style={{ color: 'red' }}>{error}</p>}
       </form>
     </div>
   );
