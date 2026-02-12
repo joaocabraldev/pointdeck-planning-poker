@@ -2,7 +2,8 @@ import { Router, Response } from "express";
 import { ulid } from "ulid";
 import { authenticate, AuthRequest } from "./auth.middleware.js";
 import { store } from "./store.js";
-import {PokerPlanningRoom, RoomResponse} from "./pokerPlanningRoom.model.js";
+import { PokerPlanningRoom, RoomResponse } from "./pokerPlanningRoom.model.js";
+import { emitRoomUpdate } from "./socket.js";
 
 const router = Router();
 
@@ -93,6 +94,9 @@ router.post("/rooms/:id/join", authenticate, (req: AuthRequest, res: Response) =
   if (!room.participants.includes(userId)) {
     room.participants.push(userId);
     store.updateRoom(id, { participants: room.participants });
+
+    // Emit room update to all subscribers
+    emitRoomUpdate(id);
   }
 
   res.status(200).send();
@@ -132,6 +136,9 @@ router.delete("/rooms/:id/participants/:participantId", authenticate, (req: Auth
   }
 
   store.updateRoom(id, { participants: room.participants, votes: room.votes });
+
+  // Emit room update to all subscribers
+  emitRoomUpdate(id);
 
   res.status(200).send();
 });
@@ -179,6 +186,9 @@ router.post("/rooms/:id/votes", authenticate, (req: AuthRequest, res: Response) 
   room.votes[userId] = vote;
   store.updateRoom(id, { votes: room.votes });
 
+  // Emit room update to all subscribers
+  emitRoomUpdate(id);
+
   res.status(200).send();
 });
 
@@ -200,6 +210,9 @@ router.delete("/rooms/:id/votes", authenticate, (req: AuthRequest, res: Response
   // Remove vote
   delete room.votes[userId];
   store.updateRoom(id, { votes: room.votes });
+
+  // Emit room update to all subscribers
+  emitRoomUpdate(id);
 
   res.status(200).send();
 });
@@ -232,6 +245,9 @@ router.post("/rooms/:id/voting/start", authenticate, (req: AuthRequest, res: Res
     revealed: false,
   });
 
+  // Emit room update to all subscribers
+  emitRoomUpdate(id);
+
   res.status(200).send();
 });
 
@@ -262,6 +278,9 @@ router.post("/rooms/:id/voting/close", authenticate, (req: AuthRequest, res: Res
     revealed: true,
   });
 
+  // Emit room update to all subscribers
+  emitRoomUpdate(id);
+
   res.status(200).send();
 });
 
@@ -289,6 +308,9 @@ router.post("/rooms/:id/voting/reset", authenticate, (req: AuthRequest, res: Res
     votes: {},
     revealed: false,
   });
+
+  // Emit room update to all subscribers
+  emitRoomUpdate(id);
 
   res.status(200).send();
 });
@@ -322,6 +344,9 @@ router.post("/rooms/:id/agreed-value", authenticate, (req: AuthRequest, res: Res
 
   // Set agreed value
   store.updateRoom(id, { agreedValue: value });
+
+  // Emit room update to all subscribers
+  emitRoomUpdate(id);
 
   res.status(200).send();
 });
