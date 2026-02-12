@@ -237,12 +237,14 @@ router.post("/rooms/:id/voting/start", authenticate, (req: AuthRequest, res: Res
     return res.status(400).json({ error: "Voting is already active" });
   }
 
-  // Start voting - clear previous votes and set status
+  // Start voting - clear previous votes, agreed value, and set status
   store.updateRoom(id, {
     votingStatus: "active",
     votingStartedAt: new Date(),
+    votingClosedAt: undefined,
     votes: {},
     revealed: false,
+    agreedValue: undefined,
   });
 
   // Emit room update to all subscribers
