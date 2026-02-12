@@ -8,7 +8,7 @@ interface SessionState {
   session: session | null;
   isLoading: boolean;
   error: string | null;
-  loadSession: () => void;
+  loadSession: () => Promise<void>;
   signup: (name: string) => Promise<void>;
   logout: () => void;
 }
@@ -18,16 +18,23 @@ const useSessionStore = create<SessionState>((set) => ({
   isLoading: false,
   error: null,
 
-  loadSession: () => {
+  loadSession: async () => {
     const stored = storage.getItem<session>("session");
     if (stored && stored.token) {
-      const newSession = new session(
-        new user(stored.user.id, stored.user.name),
-        stored.id,
-        stored.token
-      );
       apiClient.setToken(stored.token);
-      set({ session: newSession });
+      try {
+        await apiClient.getMe();
+        const newSession = new session(
+          new user(stored.user.id, stored.user.name),
+          stored.id,
+          stored.token
+        );
+        set({ session: newSession });
+      } catch {
+        // User no longer exists on server (e.g. server restarted) — clear stale session
+        storage.removeItem("session");
+        apiClient.clearToken();
+      }
     }
   },
 

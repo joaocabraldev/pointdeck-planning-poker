@@ -83,6 +83,10 @@ class ApiClient {
   }
 
   // Auth
+  async getMe(): Promise<{ id: string; name: string }> {
+    return this.request('GET', '/me');
+  }
+
   async createSession(name: string): Promise<SessionResponse> {
     const data = await this.request('POST', '/session', { name });
     this.setToken(data.token);
