@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router";
 import "./App.css";
 import { useSessionStore } from "../store/sessionStore";
@@ -10,22 +10,13 @@ function App() {
   const session = useSessionStore((s) => s.session);
   const loadSession = useSessionStore((s) => s.loadSession);
   const location = useLocation();
-  const intendedDestination = useRef<string | null>(null);
 
   useEffect(() => {
     loadSession();
   }, [loadSession]);
 
-  // Save intended destination when accessing room without auth
-  if (!session && location.pathname.startsWith('/rooms/') && !intendedDestination.current) {
-    intendedDestination.current = location.pathname;
-  }
-
-  // Handle redirect after authentication
-  const redirectPath = session && intendedDestination.current ? intendedDestination.current : null;
-  if (redirectPath) {
-    intendedDestination.current = null;
-  }
+  // Read the intended destination from navigation state (set when redirecting to /signup)
+  const from = (location.state as { from?: string })?.from;
 
   return (
     <Routes>
@@ -37,11 +28,7 @@ function App() {
         path="/signup"
         element={
           session ? (
-            redirectPath ? (
-              <Navigate to={redirectPath} replace />
-            ) : (
-              <Navigate to="/" replace />
-            )
+            <Navigate to={from || "/"} replace />
           ) : (
             <Signup />
           )
@@ -49,7 +36,7 @@ function App() {
       />
       <Route
         path="/rooms/:roomId"
-        element={session ? <Room /> : <Navigate to="/signup" replace />}
+        element={session ? <Room /> : <Navigate to="/signup" state={{ from: location.pathname }} replace />}
       />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
