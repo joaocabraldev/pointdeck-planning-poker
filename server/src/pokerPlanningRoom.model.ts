@@ -11,7 +11,9 @@ export interface PokerPlanningRoom {
   votes: Record<string, VoteValue>;
   votingStatus: VotingStatus;
   votingStartedAt?: Date;
+  votingClosedAt?: Date;
   revealed: boolean;
+  agreedValue?: VoteValue;
 }
 
 export interface CreateRoomInput {
@@ -35,5 +37,8 @@ export interface RoomResponse {
   votes: Record<string, VoteValue>;
   votingStatus: VotingStatus;
   votingStartedAt?: Date;
+  votingClosedAt?: Date;
+  votingDuration?: string; // Format: mm:ss
   revealed: boolean;
+  agreedValue?: VoteValue;
 }

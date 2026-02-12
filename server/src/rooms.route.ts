@@ -2,11 +2,10 @@ import { Router, Response } from "express";
 import { ulid } from "ulid";
 import { authenticate, AuthRequest } from "./auth.middleware.js";
 import { store } from "./store.js";
-import { PokerPlanningRoom } from "./pokerPlanningRoom.model.js";
+import {PokerPlanningRoom, RoomResponse} from "./pokerPlanningRoom.model.js";
 
 const router = Router();
 
-// Create rooms (protected route - requires authentication)
 router.post("/rooms", authenticate, (req: AuthRequest, res: Response) => {
   const userId = req.user!.id;
   const userName = req.user!.name;
@@ -37,6 +36,17 @@ router.post("/rooms", authenticate, (req: AuthRequest, res: Response) => {
   res.json({ room_id: roomId });
 });
 
+// Helper function to calculate voting duration in mm:ss format
+function calculateVotingDuration(startedAt: Date, closedAt?: Date): string | undefined {
+  if (!startedAt) return undefined;
+  const endTime = closedAt || new Date();
+  const durationMs = endTime.getTime() - startedAt.getTime();
+  const totalSeconds = Math.floor(durationMs / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+}
+
 // Helper function to get room response
 function getRoomResponse(room: PokerPlanningRoom, store: any) {
   const owner = store.getUser(room.owner);
@@ -48,7 +58,9 @@ function getRoomResponse(room: PokerPlanningRoom, store: any) {
     };
   });
 
-  return {
+  const votingDuration = room.votingStartedAt ? calculateVotingDuration(room.votingStartedAt, room.votingClosedAt) : undefined;
+
+  return <RoomResponse>{
     room_id: room.id,
     name: room.name,
     created_by: {
@@ -60,7 +72,10 @@ function getRoomResponse(room: PokerPlanningRoom, store: any) {
     votes: room.votes,
     votingStatus: room.votingStatus,
     votingStartedAt: room.votingStartedAt,
+    votingClosedAt: room.votingClosedAt,
+    votingDuration,
     revealed: room.revealed,
+    agreedValue: room.agreedValue,
   };
 }
 
@@ -95,8 +110,8 @@ router.get("/rooms/:id", authenticate, (req: AuthRequest, res: Response) => {
   res.json(getRoomResponse(room, store));
 });
 
-// Vote
-router.post("/rooms/:id/vote", authenticate, (req: AuthRequest, res: Response) => {
+// Submit or update a vote
+router.post("/rooms/:id/votes", authenticate, (req: AuthRequest, res: Response) => {
   const { id } = req.params;
   const userId = req.user!.id;
   const { vote } = req.body || {};
@@ -130,7 +145,7 @@ router.post("/rooms/:id/vote", authenticate, (req: AuthRequest, res: Response) =
 });
 
 // Cancel vote
-router.delete("/rooms/:id/vote", authenticate, (req: AuthRequest, res: Response) => {
+router.delete("/rooms/:id/votes", authenticate, (req: AuthRequest, res: Response) => {
   const { id } = req.params;
   const userId = req.user!.id;
 
@@ -152,7 +167,7 @@ router.delete("/rooms/:id/vote", authenticate, (req: AuthRequest, res: Response)
 });
 
 // Start voting
-router.post("/rooms/:id/start-voting", authenticate, (req: AuthRequest, res: Response) => {
+router.post("/rooms/:id/voting/start", authenticate, (req: AuthRequest, res: Response) => {
   const { id } = req.params;
   const userId = req.user!.id;
 
@@ -183,7 +198,7 @@ router.post("/rooms/:id/start-voting", authenticate, (req: AuthRequest, res: Res
 });
 
 // Close voting
-router.post("/rooms/:id/close-voting", authenticate, (req: AuthRequest, res: Response) => {
+router.post("/rooms/:id/voting/close", authenticate, (req: AuthRequest, res: Response) => {
   const { id } = req.params;
   const userId = req.user!.id;
 
@@ -205,6 +220,7 @@ router.post("/rooms/:id/close-voting", authenticate, (req: AuthRequest, res: Res
   // Close voting
   store.updateRoom(id, {
     votingStatus: "closed",
+    votingClosedAt: new Date(),
     revealed: true,
   });
 
@@ -212,7 +228,7 @@ router.post("/rooms/:id/close-voting", authenticate, (req: AuthRequest, res: Res
 });
 
 // Reset voting
-router.post("/rooms/:id/reset-voting", authenticate, (req: AuthRequest, res: Response) => {
+router.post("/rooms/:id/voting/reset", authenticate, (req: AuthRequest, res: Response) => {
   const id = req.params.id as string;
   const userId = req.user!.id;
 
@@ -231,9 +247,43 @@ router.post("/rooms/:id/reset-voting", authenticate, (req: AuthRequest, res: Res
   store.updateRoom(id, {
     votingStatus: "idle",
     votingStartedAt: undefined,
+    votingClosedAt: undefined,
     votes: {},
     revealed: false,
   });
+
+  res.status(200).send();
+});
+
+// Set agreed value (consensus estimate)
+router.post("/rooms/:id/agreed-value", authenticate, (req: AuthRequest, res: Response) => {
+  const { id } = req.params;
+  const userId = req.user!.id;
+  const { value } = req.body || {};
+
+  const room = store.getRoom(id);
+  if (!room) {
+    return res.status(404).json({ error: "Room not found" });
+  }
+
+  // Only owner can set agreed value
+  if (room.owner !== userId) {
+    return res.status(403).json({ error: "Only the room owner can set the agreed value" });
+  }
+
+  // Check if voting is closed
+  if (room.votingStatus !== "closed") {
+    return res.status(400).json({ error: "Voting must be closed before setting agreed value" });
+  }
+
+  // Validate vote value
+  const validVotes = ["XS", "S", "M", "L"];
+  if (!value || !validVotes.includes(value)) {
+    return res.status(400).json({ error: "Invalid value. Must be one of: XS, S, M, L" });
+  }
+
+  // Set agreed value
+  store.updateRoom(id, { agreedValue: value });
 
   res.status(200).send();
 });

@@ -1,10 +1,12 @@
 import express from "express";
 import { createServer } from 'node:http';
 import cors from "cors";
+import swaggerUi from "swagger-ui-express";
 import sessionRouter from "./session.route.js";
 import roomsRouter from "./rooms.route.js";
 import { JWT_SECRET } from "./auth.middleware.js";
 import { initializeSocket } from "./socket.js";
+import { swaggerSpec } from "./swagger.config.js";
 
 const app = express();
 const server = createServer(app);
@@ -20,6 +22,18 @@ app.get("/", (_req, res) => {
   res.json({
       health: true
   });
+});
+
+// Swagger UI
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  swaggerOptions: {
+    url: "/api-docs.json"
+  }
+}));
+
+// API spec endpoint
+app.get("/api-docs.json", (_req, res) => {
+  res.json(swaggerSpec);
 });
 
 // Routes

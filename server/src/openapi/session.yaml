@@ -1,0 +1,37 @@
+paths:
+  /session:
+    post:
+      tags:
+        - Authentication
+      summary: Create a new user session (login)
+      description: Creates a new user and returns a JWT token for authentication. No password required - just provide a display name.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                  description: User's display name
+                  example: John Doe
+                  minLength: 1
+      responses:
+        '200':
+          description: Session created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionResponse'
+        '400':
+          description: Bad request - name is missing or empty
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Name is required"
+

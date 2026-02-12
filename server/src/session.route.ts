@@ -7,7 +7,6 @@ import { User } from "./user.model.js";
 
 const router = Router();
 
-// Login - Create session
 router.post("/session", (req, res) => {
   const { name } = req.body;
   if (!name) {
