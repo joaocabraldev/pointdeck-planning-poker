@@ -15,7 +15,7 @@ const server = createServer(app);
 initializeSocket(server);
 
 app.use(express.json());
-app.use(cors({ origin: "http://localhost:5173" }));
+app.use(cors({ origin: "*" }));
 
 // Health check endpoint
 app.get("/", (_req, res) => {

@@ -1,5 +1,18 @@
 {
+  "name": "poker-planning",
+  "version": "1.0.0",
+  "description": "Poker Planning Application with E2E Tests",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:ui": "playwright test --ui",
+    "test:debug": "playwright test --debug",
+    "test:report": "playwright show-report"
+  },
   "dependencies": {
     "ulid": "^3.0.2"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.58.2"
   }
 }

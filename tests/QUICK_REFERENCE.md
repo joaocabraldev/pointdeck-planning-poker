@@ -23,13 +23,16 @@ npx playwright test auth.spec.ts
 npx playwright test voting-flow.spec.ts
 npx playwright test multi-user.spec.ts
 
-# Run tests in UI mode (interactive)
+# Run tests in UI mode (interactive) ⭐ RECOMMENDED
 npx playwright test --ui
 
 # Run with visible browser
 npx playwright test --headed
 
-# Debug specific test
+# Run with visible browser (slow motion)
+npx playwright test --headed --slow-mo=1000
+
+# Debug specific test (step-by-step)
 npx playwright test --debug auth.spec.ts
 
 # View last test report
@@ -37,6 +40,9 @@ npx playwright show-report
 
 # Run single test by name
 npx playwright test -g "should successfully sign up"
+
+# Run with browser visible for specific test
+npx playwright test voting-flow.spec.ts --headed
 ```
 
 ## Test Categories
