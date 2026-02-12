@@ -82,7 +82,7 @@ function getRoomResponse(room: PokerPlanningRoom, store: any) {
 
 // Join room
 router.post("/rooms/:id/join", authenticate, (req: AuthRequest, res: Response) => {
-  const { id } = req.params;
+  const id = req.params.id as string;
   const userId = req.user!.id;
 
   const room = store.getRoom(id);
@@ -104,7 +104,8 @@ router.post("/rooms/:id/join", authenticate, (req: AuthRequest, res: Response) =
 
 // Remove participant from room
 router.delete("/rooms/:id/participants/:participantId", authenticate, (req: AuthRequest, res: Response) => {
-  const { id, participantId } = req.params;
+  const id = req.params.id as string;
+  const participantId = req.params.participantId as string;
   const userId = req.user!.id;
 
   const room = store.getRoom(id);
@@ -128,7 +129,7 @@ router.delete("/rooms/:id/participants/:participantId", authenticate, (req: Auth
   }
 
   // Remove participant
-  room.participants = room.participants.filter(id => id !== participantId);
+  room.participants = room.participants.filter(pid => pid !== participantId);
 
   // Also remove their vote if they had one
   if (room.votes[participantId]) {
@@ -145,7 +146,7 @@ router.delete("/rooms/:id/participants/:participantId", authenticate, (req: Auth
 
 // Get room state
 router.get("/rooms/:id", authenticate, (req: AuthRequest, res: Response) => {
-  const { id } = req.params;
+  const id = req.params.id as string;
 
   const room = store.getRoom(id);
   if (!room) {
@@ -157,7 +158,7 @@ router.get("/rooms/:id", authenticate, (req: AuthRequest, res: Response) => {
 
 // Submit or update a vote
 router.post("/rooms/:id/votes", authenticate, (req: AuthRequest, res: Response) => {
-  const { id } = req.params;
+  const id = req.params.id as string;
   const userId = req.user!.id;
   const { vote } = req.body || {};
 
@@ -194,7 +195,7 @@ router.post("/rooms/:id/votes", authenticate, (req: AuthRequest, res: Response) 
 
 // Cancel vote
 router.delete("/rooms/:id/votes", authenticate, (req: AuthRequest, res: Response) => {
-  const { id } = req.params;
+  const id = req.params.id as string;
   const userId = req.user!.id;
 
   const room = store.getRoom(id);
@@ -219,7 +220,7 @@ router.delete("/rooms/:id/votes", authenticate, (req: AuthRequest, res: Response
 
 // Start voting
 router.post("/rooms/:id/voting/start", authenticate, (req: AuthRequest, res: Response) => {
-  const { id } = req.params;
+  const id = req.params.id as string;
   const userId = req.user!.id;
 
   const room = store.getRoom(id);
@@ -255,7 +256,7 @@ router.post("/rooms/:id/voting/start", authenticate, (req: AuthRequest, res: Res
 
 // Close voting
 router.post("/rooms/:id/voting/close", authenticate, (req: AuthRequest, res: Response) => {
-  const { id } = req.params;
+  const id = req.params.id as string;
   const userId = req.user!.id;
 
   const room = store.getRoom(id);
@@ -319,7 +320,7 @@ router.post("/rooms/:id/voting/reset", authenticate, (req: AuthRequest, res: Res
 
 // Set agreed value (consensus estimate)
 router.post("/rooms/:id/agreed-value", authenticate, (req: AuthRequest, res: Response) => {
-  const { id } = req.params;
+  const id = req.params.id as string;
   const userId = req.user!.id;
   const { value } = req.body || {};
 
