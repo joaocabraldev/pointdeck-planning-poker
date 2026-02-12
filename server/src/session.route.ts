@@ -1,7 +1,9 @@
 import { Router } from "express";
 import { ulid } from "ulid";
 import jwt from "jsonwebtoken";
-import { JWT_SECRET } from "../middleware/auth.js";
+import { JWT_SECRET } from "./auth.middleware.js";
+import { store } from "./store.js";
+import { User } from "./user.model.js";
 
 const router = Router();
 
@@ -11,7 +13,17 @@ router.post("/session", (req, res) => {
   if (!name) {
     return res.status(400).json({ error: "Name is required" });
   }
+
   const id = ulid();
+
+  // Create and store user
+  const user: User = {
+    id,
+    name,
+    createdAt: new Date(),
+  };
+
+  store.createUser(user);
 
   // Generate JWT token
   const token = jwt.sign(

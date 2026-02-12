@@ -1,9 +1,9 @@
 import express from "express";
 import { createServer } from 'node:http';
 import cors from "cors";
-import sessionRouter from "./routes/session.js";
-import roomsRouter from "./routes/rooms.js";
-import { JWT_SECRET } from "./middleware/auth.js";
+import sessionRouter from "./session.route.js";
+import roomsRouter from "./rooms.route.js";
+import { JWT_SECRET } from "./auth.middleware.js";
 import { initializeSocket } from "./socket.js";
 
 const app = express();

@@ -1,9 +1,14 @@
 import request from "supertest";
 import jwt from "jsonwebtoken";
 import { app } from "./api.js";
-import { JWT_SECRET } from "./middleware/auth.js";
+import { JWT_SECRET } from "./auth.middleware.js";
+import { store } from "./store.js";
 
 describe("API Tests", () => {
+  // Clear store before each test to ensure test isolation
+  beforeEach(() => {
+    store.clear();
+  });
   describe("GET /", () => {
     it("should return health check", async () => {
       const response = await request(app).get("/").expect(200);
@@ -94,11 +99,29 @@ describe("API Tests", () => {
         .expect(200);
 
       expect(response.body).toHaveProperty("room_id");
-      expect(response.body).toHaveProperty("created_by");
-      expect(response.body.created_by).toEqual({
+      expect(typeof response.body.room_id).toBe("string");
+
+      // Verify room was created by fetching it
+      const roomId = response.body.room_id;
+      const roomState = await request(app)
+        .get(`/rooms/${roomId}`)
+        .set("Authorization", `Bearer ${authToken}`)
+        .expect(200);
+
+      expect(roomState.body.created_by).toEqual({
         id: userId,
         name: userName,
       });
+      expect(roomState.body.participants).toEqual([
+        {
+          id: userId,
+          name: userName,
+        },
+      ]);
+      expect(roomState.body.votes).toEqual({});
+      expect(roomState.body.votingStatus).toBe("idle");
+      expect(roomState.body.votingStartedAt).toBeUndefined();
+      expect(roomState.body.revealed).toBe(false);
     });
 
     it("should create different rooms for different requests", async () => {
@@ -113,7 +136,6 @@ describe("API Tests", () => {
         .expect(200);
 
       expect(response1.body.room_id).not.toBe(response2.body.room_id);
-      expect(response1.body.created_by).toEqual(response2.body.created_by);
     });
 
     it("should create rooms for different users", async () => {
@@ -123,6 +145,7 @@ describe("API Tests", () => {
         .send({ name: "Another User" });
 
       const authToken2 = session2.body.token;
+      const userId2 = session2.body.user.id;
 
       const room1 = await request(app)
         .post("/rooms")
@@ -135,8 +158,18 @@ describe("API Tests", () => {
         .expect(200);
 
       expect(room1.body.room_id).not.toBe(room2.body.room_id);
-      expect(room1.body.created_by.name).toBe("Test User");
-      expect(room2.body.created_by.name).toBe("Another User");
+
+      // Fetch rooms to verify owners
+      const room1State = await request(app)
+        .get(`/rooms/${room1.body.room_id}`)
+        .set("Authorization", `Bearer ${authToken}`);
+
+      const room2State = await request(app)
+        .get(`/rooms/${room2.body.room_id}`)
+        .set("Authorization", `Bearer ${authToken2}`);
+
+      expect(room1State.body.created_by.name).toBe("Test User");
+      expect(room2State.body.created_by.name).toBe("Another User");
     });
 
     it("should fail without authentication", async () => {
@@ -184,6 +217,456 @@ describe("API Tests", () => {
 
       expect(response.body).toEqual({
         error: "Invalid or expired token",
+      });
+    });
+  });
+
+  describe("Room Management and Voting", () => {
+    let ownerToken: string;
+    let ownerId: string;
+    let ownerName: string;
+    let participantToken: string;
+    let participantId: string;
+    let participantName: string;
+    let roomId: string;
+
+    beforeEach(async () => {
+      // Create owner
+      const ownerSession = await request(app)
+        .post("/session")
+        .send({ name: "Room Owner" });
+      ownerToken = ownerSession.body.token;
+      ownerId = ownerSession.body.user.id;
+      ownerName = ownerSession.body.user.name;
+
+      // Create participant
+      const participantSession = await request(app)
+        .post("/session")
+        .send({ name: "Participant" });
+      participantToken = participantSession.body.token;
+      participantId = participantSession.body.user.id;
+      participantName = participantSession.body.user.name;
+
+      // Create room
+      const roomResponse = await request(app)
+        .post("/rooms")
+        .set("Authorization", `Bearer ${ownerToken}`);
+      roomId = roomResponse.body.room_id;
+    });
+
+    describe("POST /rooms/:id/join", () => {
+      it("should allow user to join a room", async () => {
+        await request(app)
+          .post(`/rooms/${roomId}/join`)
+          .set("Authorization", `Bearer ${participantToken}`)
+          .expect(200);
+
+        // Verify participant was added
+        const room = await request(app)
+          .get(`/rooms/${roomId}`)
+          .set("Authorization", `Bearer ${ownerToken}`)
+          .expect(200);
+
+        expect(room.body.participants).toHaveLength(2);
+        expect(room.body.participants).toContainEqual({
+          id: participantId,
+          name: participantName,
+        });
+      });
+
+      it("should return 404 for non-existent room", async () => {
+        await request(app)
+          .post("/rooms/non-existent-id/join")
+          .set("Authorization", `Bearer ${participantToken}`)
+          .expect(404);
+      });
+    });
+
+    describe("GET /rooms/:id", () => {
+      it("should return room state", async () => {
+        const response = await request(app)
+          .get(`/rooms/${roomId}`)
+          .set("Authorization", `Bearer ${ownerToken}`)
+          .expect(200);
+
+        expect(response.body).toHaveProperty("room_id", roomId);
+        expect(response.body).toHaveProperty("created_by");
+        expect(response.body).toHaveProperty("participants");
+        expect(response.body).toHaveProperty("votes");
+        expect(response.body).toHaveProperty("votingStatus");
+        expect(response.body).toHaveProperty("revealed");
+        expect(response.body.votingStatus).toBe("idle");
+      });
+
+      it("should return 404 for non-existent room", async () => {
+        await request(app)
+          .get("/rooms/non-existent-id")
+          .set("Authorization", `Bearer ${ownerToken}`)
+          .expect(404);
+      });
+    });
+
+    describe("POST /rooms/:id/start-voting", () => {
+      it("should allow owner to start voting", async () => {
+        await request(app)
+          .post(`/rooms/${roomId}/start-voting`)
+          .set("Authorization", `Bearer ${ownerToken}`)
+          .expect(200);
+
+        // Verify voting started
+        const room = await request(app)
+          .get(`/rooms/${roomId}`)
+          .set("Authorization", `Bearer ${ownerToken}`);
+
+        expect(room.body.votingStatus).toBe("active");
+        expect(room.body.votingStartedAt).toBeDefined();
+        expect(room.body.votes).toEqual({});
+        expect(room.body.revealed).toBe(false);
+      });
+
+      it("should not allow non-owner to start voting", async () => {
+        // Join as participant
+        await request(app)
+          .post(`/rooms/${roomId}/join`)
+          .set("Authorization", `Bearer ${participantToken}`);
+
+        const response = await request(app)
+          .post(`/rooms/${roomId}/start-voting`)
+          .set("Authorization", `Bearer ${participantToken}`)
+          .expect(403);
+
+        expect(response.body.error).toBe("Only the room owner can start voting");
+      });
+
+      it("should not allow starting voting when already active", async () => {
+        // Start voting first time
+        await request(app)
+          .post(`/rooms/${roomId}/start-voting`)
+          .set("Authorization", `Bearer ${ownerToken}`)
+          .expect(200);
+
+        // Try to start again
+        const response = await request(app)
+          .post(`/rooms/${roomId}/start-voting`)
+          .set("Authorization", `Bearer ${ownerToken}`)
+          .expect(400);
+
+        expect(response.body.error).toBe("Voting is already active");
+      });
+    });
+
+    describe("POST /rooms/:id/vote", () => {
+      beforeEach(async () => {
+        // Join room as participant
+        await request(app)
+          .post(`/rooms/${roomId}/join`)
+          .set("Authorization", `Bearer ${participantToken}`);
+
+        // Start voting
+        await request(app)
+          .post(`/rooms/${roomId}/start-voting`)
+          .set("Authorization", `Bearer ${ownerToken}`);
+      });
+
+      it("should allow participant to vote with valid value", async () => {
+        await request(app)
+          .post(`/rooms/${roomId}/vote`)
+          .set("Authorization", `Bearer ${participantToken}`)
+          .send({ vote: "M" })
+          .expect(200);
+
+        // Verify vote was recorded
+        const room = await request(app)
+          .get(`/rooms/${roomId}`)
+          .set("Authorization", `Bearer ${ownerToken}`);
+
+        expect(room.body.votes[participantId]).toBe("M");
+      });
+
+      it("should allow all valid vote values (XS, S, M, L)", async () => {
+        const validVotes = ["XS", "S", "M", "L"];
+
+        for (const vote of validVotes) {
+          await request(app)
+            .post(`/rooms/${roomId}/vote`)
+            .set("Authorization", `Bearer ${participantToken}`)
+            .send({ vote })
+            .expect(200);
+        }
+      });
+
+      it("should reject invalid vote values", async () => {
+        const response = await request(app)
+          .post(`/rooms/${roomId}/vote`)
+          .set("Authorization", `Bearer ${participantToken}`)
+          .send({ vote: "XL" })
+          .expect(400);
+
+        expect(response.body.error).toBe("Invalid vote. Must be one of: XS, S, M, L");
+      });
+
+      it("should not allow voting when voting is not active", async () => {
+        // Close voting
+        await request(app)
+          .post(`/rooms/${roomId}/close-voting`)
+          .set("Authorization", `Bearer ${ownerToken}`);
+
+        const response = await request(app)
+          .post(`/rooms/${roomId}/vote`)
+          .set("Authorization", `Bearer ${participantToken}`)
+          .send({ vote: "M" })
+          .expect(400);
+
+        expect(response.body.error).toBe("Voting is not active");
+      });
+
+      it("should not allow non-participants to vote", async () => {
+        // Create another user who hasn't joined
+        const outsiderSession = await request(app)
+          .post("/session")
+          .send({ name: "Outsider" });
+
+        const response = await request(app)
+          .post(`/rooms/${roomId}/vote`)
+          .set("Authorization", `Bearer ${outsiderSession.body.token}`)
+          .send({ vote: "M" })
+          .expect(403);
+
+        expect(response.body.error).toBe("You must join the room first");
+      });
+    });
+
+    describe("DELETE /rooms/:id/vote", () => {
+      beforeEach(async () => {
+        // Join room as participant
+        await request(app)
+          .post(`/rooms/${roomId}/join`)
+          .set("Authorization", `Bearer ${participantToken}`);
+
+        // Start voting
+        await request(app)
+          .post(`/rooms/${roomId}/start-voting`)
+          .set("Authorization", `Bearer ${ownerToken}`);
+
+        // Cast a vote
+        await request(app)
+          .post(`/rooms/${roomId}/vote`)
+          .set("Authorization", `Bearer ${participantToken}`)
+          .send({ vote: "M" });
+      });
+
+      it("should allow participant to cancel their vote", async () => {
+        await request(app)
+          .delete(`/rooms/${roomId}/vote`)
+          .set("Authorization", `Bearer ${participantToken}`)
+          .expect(200);
+
+        // Verify vote was removed
+        const room = await request(app)
+          .get(`/rooms/${roomId}`)
+          .set("Authorization", `Bearer ${ownerToken}`);
+
+        expect(room.body.votes[participantId]).toBeUndefined();
+      });
+
+      it("should not allow canceling vote when voting is not active", async () => {
+        // Close voting
+        await request(app)
+          .post(`/rooms/${roomId}/close-voting`)
+          .set("Authorization", `Bearer ${ownerToken}`);
+
+        const response = await request(app)
+          .delete(`/rooms/${roomId}/vote`)
+          .set("Authorization", `Bearer ${participantToken}`)
+          .expect(400);
+
+        expect(response.body.error).toBe("Voting is not active");
+      });
+    });
+
+    describe("POST /rooms/:id/close-voting", () => {
+      beforeEach(async () => {
+        // Join room as participant
+        await request(app)
+          .post(`/rooms/${roomId}/join`)
+          .set("Authorization", `Bearer ${participantToken}`);
+
+        // Start voting
+        await request(app)
+          .post(`/rooms/${roomId}/start-voting`)
+          .set("Authorization", `Bearer ${ownerToken}`);
+
+        // Cast votes
+        await request(app)
+          .post(`/rooms/${roomId}/vote`)
+          .set("Authorization", `Bearer ${ownerToken}`)
+          .send({ vote: "S" });
+
+        await request(app)
+          .post(`/rooms/${roomId}/vote`)
+          .set("Authorization", `Bearer ${participantToken}`)
+          .send({ vote: "M" });
+      });
+
+      it("should allow owner to close voting and reveal votes", async () => {
+        await request(app)
+          .post(`/rooms/${roomId}/close-voting`)
+          .set("Authorization", `Bearer ${ownerToken}`)
+          .expect(200);
+
+        // Verify voting closed
+        const room = await request(app)
+          .get(`/rooms/${roomId}`)
+          .set("Authorization", `Bearer ${ownerToken}`);
+
+        expect(room.body.votingStatus).toBe("closed");
+        expect(room.body.revealed).toBe(true);
+        expect(room.body.votes[ownerId]).toBe("S");
+        expect(room.body.votes[participantId]).toBe("M");
+      });
+
+      it("should not allow non-owner to close voting", async () => {
+        const response = await request(app)
+          .post(`/rooms/${roomId}/close-voting`)
+          .set("Authorization", `Bearer ${participantToken}`)
+          .expect(403);
+
+        expect(response.body.error).toBe("Only the room owner can close voting");
+      });
+
+      it("should not allow closing voting when not active", async () => {
+        // Close voting first time
+        await request(app)
+          .post(`/rooms/${roomId}/close-voting`)
+          .set("Authorization", `Bearer ${ownerToken}`)
+          .expect(200);
+
+        // Try to close again
+        const response = await request(app)
+          .post(`/rooms/${roomId}/close-voting`)
+          .set("Authorization", `Bearer ${ownerToken}`)
+          .expect(400);
+
+        expect(response.body.error).toBe("Voting is not active");
+      });
+    });
+
+    describe("POST /rooms/:id/reset-voting", () => {
+      beforeEach(async () => {
+        // Join room as participant
+        await request(app)
+          .post(`/rooms/${roomId}/join`)
+          .set("Authorization", `Bearer ${participantToken}`);
+
+        // Start voting
+        await request(app)
+          .post(`/rooms/${roomId}/start-voting`)
+          .set("Authorization", `Bearer ${ownerToken}`);
+
+        // Cast votes
+        await request(app)
+          .post(`/rooms/${roomId}/vote`)
+          .set("Authorization", `Bearer ${ownerToken}`)
+          .send({ vote: "S" });
+
+        await request(app)
+          .post(`/rooms/${roomId}/vote`)
+          .set("Authorization", `Bearer ${participantToken}`)
+          .send({ vote: "M" });
+
+        // Close voting
+        await request(app)
+          .post(`/rooms/${roomId}/close-voting`)
+          .set("Authorization", `Bearer ${ownerToken}`);
+      });
+
+      it("should allow owner to reset voting session", async () => {
+        await request(app)
+          .post(`/rooms/${roomId}/reset-voting`)
+          .set("Authorization", `Bearer ${ownerToken}`)
+          .expect(200);
+
+        // Verify voting was reset
+        const room = await request(app)
+          .get(`/rooms/${roomId}`)
+          .set("Authorization", `Bearer ${ownerToken}`);
+
+        expect(room.body.votingStatus).toBe("idle");
+        expect(room.body.votes).toEqual({});
+        expect(room.body.revealed).toBe(false);
+        expect(room.body.votingStartedAt).toBeUndefined();
+
+        // Verify participants are still there
+        expect(room.body.participants).toHaveLength(2);
+        expect(room.body.participants).toContainEqual({
+          id: ownerId,
+          name: ownerName,
+        });
+        expect(room.body.participants).toContainEqual({
+          id: participantId,
+          name: participantName,
+        });
+      });
+
+      it("should not allow non-owner to reset voting", async () => {
+        const response = await request(app)
+          .post(`/rooms/${roomId}/reset-voting`)
+          .set("Authorization", `Bearer ${participantToken}`)
+          .expect(403);
+
+        expect(response.body.error).toBe("Only the room owner can reset voting");
+      });
+
+      it("should allow resetting from idle state", async () => {
+        // First reset
+        await request(app)
+          .post(`/rooms/${roomId}/reset-voting`)
+          .set("Authorization", `Bearer ${ownerToken}`)
+          .expect(200);
+
+        // Reset again from idle state
+        await request(app)
+          .post(`/rooms/${roomId}/reset-voting`)
+          .set("Authorization", `Bearer ${ownerToken}`)
+          .expect(200);
+
+        // Verify still in idle state
+        const room = await request(app)
+          .get(`/rooms/${roomId}`)
+          .set("Authorization", `Bearer ${ownerToken}`);
+
+        expect(room.body.votingStatus).toBe("idle");
+        expect(room.body.votes).toEqual({});
+      });
+
+      it("should allow starting new voting session after reset", async () => {
+        // Reset voting
+        await request(app)
+          .post(`/rooms/${roomId}/reset-voting`)
+          .set("Authorization", `Bearer ${ownerToken}`)
+          .expect(200);
+
+        // Start new voting session
+        await request(app)
+          .post(`/rooms/${roomId}/start-voting`)
+          .set("Authorization", `Bearer ${ownerToken}`)
+          .expect(200);
+
+        // Verify new session started
+        const room = await request(app)
+          .get(`/rooms/${roomId}`)
+          .set("Authorization", `Bearer ${ownerToken}`);
+
+        expect(room.body.votingStatus).toBe("active");
+        expect(room.body.votes).toEqual({});
+        expect(room.body.votingStartedAt).toBeDefined();
+      });
+
+      it("should return 404 for non-existent room", async () => {
+        await request(app)
+          .post("/rooms/non-existent-id/reset-voting")
+          .set("Authorization", `Bearer ${ownerToken}`)
+          .expect(404);
       });
     });
   });
