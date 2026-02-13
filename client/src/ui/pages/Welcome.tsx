@@ -80,7 +80,7 @@ function Welcome() {
           }}>
             <span style={{ color: 'var(--accent)' }}>&#9830;</span>
           </div>
-          <h1 style={{ marginBottom: '0.5rem' }}>Poker Planning</h1>
+          <h1 style={{ marginBottom: '0.5rem' }}>Planning Poker</h1>
           <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>
             Create a room and invite your team to start estimating
           </p>
