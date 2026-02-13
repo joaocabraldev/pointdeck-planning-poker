@@ -93,9 +93,8 @@ function VoteCard({ value, selected, onClick }: { value: string; selected: boole
 }
 
 /* ── Dots menu for participant actions ── */
-function ParticipantMenu({ onMakeOwner, onRemove }: { onMakeOwner: () => void; onRemove: () => void }) {
+function ParticipantMenu({ visible, onMakeOwner, onRemove }: { visible: boolean; onMakeOwner: () => void; onRemove: () => void }) {
   const [open, setOpen] = useState(false);
-  const [hovered, setHovered] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -110,26 +109,29 @@ function ParticipantMenu({ onMakeOwner, onRemove }: { onMakeOwner: () => void; o
   return (
     <div
       ref={menuRef}
-      style={{ position: 'relative' }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => { if (!open) setHovered(false); }}
+      style={{
+        position: 'absolute',
+        top: '-0.25rem',
+        right: '-0.5rem',
+      }}
     >
       <button
         onClick={() => setOpen(!open)}
         style={{
-          background: 'none',
-          border: 'none',
+          background: 'white',
+          border: '1px solid var(--border)',
           cursor: 'pointer',
-          padding: '0.15rem 0.35rem',
+          padding: '0.1rem 0.3rem',
           borderRadius: 'var(--radius-sm)',
-          fontSize: '1rem',
+          fontSize: '0.75rem',
           lineHeight: 1,
           color: 'var(--text-muted)',
-          opacity: hovered || open ? 1 : 0,
+          opacity: visible || open ? 1 : 0,
           transition: 'opacity 0.15s',
+          boxShadow: 'var(--shadow-sm)',
         }}
       >
-        ...
+        ···
       </button>
       {open && (
         <div style={{
@@ -182,6 +184,83 @@ function ParticipantMenu({ onMakeOwner, onRemove }: { onMakeOwner: () => void; o
             Remove
           </button>
         </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Participant card with hover-triggered menu ── */
+function ParticipantCard({ participant, room, currentUserId, isOwner, onTransferOwnership, onRemoveParticipant }: {
+  participant: { id: string; name: string };
+  room: RoomResponse;
+  currentUserId: string;
+  isOwner: boolean;
+  onTransferOwnership: (id: string) => void;
+  onRemoveParticipant: (id: string) => void;
+}) {
+  const [hovered, setHovered] = useState(false);
+  const hasVotedP = !!room.votes[participant.id];
+  const isMe = participant.id === currentUserId;
+  const isRoomOwner = participant.id === room.created_by.id;
+  const pInitial = participant.name.charAt(0).toUpperCase();
+  const revealedVote = room.revealed ? room.votes[participant.id] : null;
+  const showMenu = isOwner && !isRoomOwner && !isMe;
+
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: '0.5rem',
+        position: 'relative',
+      }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      {/* Card */}
+      {revealedVote ? (
+        <CardRevealed value={revealedVote} />
+      ) : hasVotedP ? (
+        <CardBack />
+      ) : (
+        <CardEmpty />
+      )}
+
+      {/* Avatar + name */}
+      <div
+        className="avatar"
+        style={{
+          background: getAvatarColor(participant.name),
+          border: isMe ? '2px solid var(--accent)' : '2px solid white',
+          width: '1.75rem',
+          height: '1.75rem',
+          fontSize: '0.7rem',
+        }}
+      >
+        {pInitial}
+      </div>
+      <span style={{
+        fontSize: '0.8rem',
+        fontWeight: isMe ? 600 : 400,
+        color: 'var(--text-primary)',
+        maxWidth: '5rem',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        whiteSpace: 'nowrap',
+        textAlign: 'center',
+      }}>
+        {participant.name}
+        {isRoomOwner && ' \u{1F451}'}
+      </span>
+
+      {/* Owner actions menu */}
+      {showMenu && (
+        <ParticipantMenu
+          visible={hovered}
+          onMakeOwner={() => onTransferOwnership(participant.id)}
+          onRemove={() => onRemoveParticipant(participant.id)}
+        />
       )}
     </div>
   );
@@ -436,67 +515,17 @@ function Room() {
             justifyContent: 'center',
             gap: '2rem',
           }}>
-            {room.participants.map((participant) => {
-              const hasVotedP = !!room.votes[participant.id];
-              const isMe = participant.id === session?.user.id;
-              const isRoomOwner = participant.id === room.created_by.id;
-              const pInitial = participant.name.charAt(0).toUpperCase();
-              const revealedVote = room.revealed ? room.votes[participant.id] : null;
-
-              return (
-                <div key={participant.id} style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  position: 'relative',
-                }}>
-                  {/* Card */}
-                  {revealedVote ? (
-                    <CardRevealed value={revealedVote} />
-                  ) : hasVotedP ? (
-                    <CardBack />
-                  ) : (
-                    <CardEmpty />
-                  )}
-
-                  {/* Avatar + name */}
-                  <div
-                    className="avatar"
-                    style={{
-                      background: getAvatarColor(participant.name),
-                      border: isMe ? '2px solid var(--accent)' : '2px solid white',
-                      width: '1.75rem',
-                      height: '1.75rem',
-                      fontSize: '0.7rem',
-                    }}
-                  >
-                    {pInitial}
-                  </div>
-                  <span style={{
-                    fontSize: '0.8rem',
-                    fontWeight: isMe ? 600 : 400,
-                    color: 'var(--text-primary)',
-                    maxWidth: '5rem',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                    textAlign: 'center',
-                  }}>
-                    {participant.name}
-                    {isRoomOwner && ' \u{1F451}'}
-                  </span>
-
-                  {/* Owner actions menu */}
-                  {isOwner && !isRoomOwner && !isMe && (
-                    <ParticipantMenu
-                      onMakeOwner={() => handleTransferOwnership(participant.id)}
-                      onRemove={() => handleRemoveParticipant(participant.id)}
-                    />
-                  )}
-                </div>
-              );
-            })}
+            {room.participants.map((participant) => (
+              <ParticipantCard
+                key={participant.id}
+                participant={participant}
+                room={room}
+                currentUserId={session?.user.id || ''}
+                isOwner={isOwner}
+                onTransferOwnership={handleTransferOwnership}
+                onRemoveParticipant={handleRemoveParticipant}
+              />
+            ))}
           </div>
 
           {/* Central action buttons */}
