@@ -63,3 +63,6 @@ Room state changes emit `room-updated` events via Socket.IO. Clients subscribe w
 
 ### IDs
 All entity IDs (users, rooms) use ULIDs via the `ulid` package.
+
+### Documentation
+Any new endpoint should be documented in the OpenAPI spec (`server/openapi.yaml`).

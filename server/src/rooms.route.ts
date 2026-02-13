@@ -144,6 +144,41 @@ router.delete("/rooms/:id/participants/:participantId", authenticate, (req: Auth
   res.status(200).send();
 });
 
+// Transfer room ownership
+router.post("/rooms/:id/owner", authenticate, (req: AuthRequest, res: Response) => {
+  const id = req.params.id as string;
+  const userId = req.user!.id;
+  const { userId: newOwnerId } = req.body || {};
+
+  const room = store.getRoom(id);
+  if (!room) {
+    return res.status(404).json({ error: "Room not found" });
+  }
+
+  // Only current owner can transfer ownership
+  if (room.owner !== userId) {
+    return res.status(403).json({ error: "Only the room owner can transfer ownership" });
+  }
+
+  // Cannot transfer to yourself
+  if (newOwnerId === room.owner) {
+    return res.status(400).json({ error: "Cannot transfer ownership to yourself" });
+  }
+
+  // New owner must be a participant
+  if (!room.participants.includes(newOwnerId)) {
+    return res.status(400).json({ error: "Target user is not a participant in this room" });
+  }
+
+  // Transfer ownership
+  store.updateRoom(id, { owner: newOwnerId });
+
+  // Emit room update to all subscribers
+  emitRoomUpdate(id);
+
+  res.status(200).send();
+});
+
 // Get room state
 router.get("/rooms/:id", authenticate, (req: AuthRequest, res: Response) => {
   const id = req.params.id as string;

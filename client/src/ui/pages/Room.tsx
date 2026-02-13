@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router";
 import { useSessionStore } from "../../store/sessionStore";
 import { apiClient } from "../../api/client";
@@ -89,6 +89,101 @@ function VoteCard({ value, selected, onClick }: { value: string; selected: boole
     >
       {value}
     </button>
+  );
+}
+
+/* ── Dots menu for participant actions ── */
+function ParticipantMenu({ onMakeOwner, onRemove }: { onMakeOwner: () => void; onRemove: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [hovered, setHovered] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handleClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [open]);
+
+  return (
+    <div
+      ref={menuRef}
+      style={{ position: 'relative' }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => { if (!open) setHovered(false); }}
+    >
+      <button
+        onClick={() => setOpen(!open)}
+        style={{
+          background: 'none',
+          border: 'none',
+          cursor: 'pointer',
+          padding: '0.15rem 0.35rem',
+          borderRadius: 'var(--radius-sm)',
+          fontSize: '1rem',
+          lineHeight: 1,
+          color: 'var(--text-muted)',
+          opacity: hovered || open ? 1 : 0,
+          transition: 'opacity 0.15s',
+        }}
+      >
+        ...
+      </button>
+      {open && (
+        <div style={{
+          position: 'absolute',
+          top: '100%',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          background: 'white',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius-md)',
+          boxShadow: 'var(--shadow-md)',
+          zIndex: 10,
+          minWidth: '7.5rem',
+          overflow: 'hidden',
+        }}>
+          <button
+            onClick={() => { onMakeOwner(); setOpen(false); }}
+            style={{
+              display: 'block',
+              width: '100%',
+              padding: '0.45rem 0.75rem',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              fontSize: '0.8rem',
+              textAlign: 'left',
+              color: 'var(--text-primary)',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-hover, #f3f4f6)')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+          >
+            Make Owner
+          </button>
+          <button
+            onClick={() => { onRemove(); setOpen(false); }}
+            style={{
+              display: 'block',
+              width: '100%',
+              padding: '0.45rem 0.75rem',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              fontSize: '0.8rem',
+              textAlign: 'left',
+              color: '#ef4444',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-hover, #f3f4f6)')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+          >
+            Remove
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -207,6 +302,16 @@ function Room() {
     }
   };
 
+  const handleTransferOwnership = async (participantId: string) => {
+    if (!roomId) return;
+    try {
+      await apiClient.transferOwnership(roomId, participantId);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to transfer ownership');
+    }
+  };
+
   const handleShareRoom = () => {
     const url = window.location.href;
     navigator.clipboard.writeText(url).then(() => {
@@ -264,14 +369,6 @@ function Room() {
 
           {/* Right: actions */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            {/* Owner controls in top bar */}
-            {isOwner && room.votingStatus === 'idle' && (
-              <button className="btn-outline" onClick={handleStartVoting}>Start Voting</button>
-            )}
-            {isOwner && room.votingStatus === 'closed' && (
-              <button className="btn-outline" onClick={handleResetVoting}>New Round</button>
-            )}
-
             <button className="btn-outline" onClick={handleShareRoom}>+ Invite Players</button>
             <button className="btn-ghost" onClick={() => navigate('/')}>Home</button>
 
@@ -390,27 +487,38 @@ function Room() {
                     {isRoomOwner && ' \u{1F451}'}
                   </span>
 
-                  {/* Remove button for owner */}
-                  {isOwner && !isRoomOwner && (
-                    <button
-                      className="btn-danger"
-                      onClick={() => handleRemoveParticipant(participant.id)}
-                      style={{ fontSize: '0.7rem', padding: '0.15rem 0.4rem' }}
-                    >
-                      Remove
-                    </button>
+                  {/* Owner actions menu */}
+                  {isOwner && !isRoomOwner && !isMe && (
+                    <ParticipantMenu
+                      onMakeOwner={() => handleTransferOwnership(participant.id)}
+                      onRemove={() => handleRemoveParticipant(participant.id)}
+                    />
                   )}
                 </div>
               );
             })}
           </div>
 
-          {/* Central action button */}
-          {isOwner && room.votingStatus === 'active' && (
-            <button className="btn-primary" onClick={handleCloseVoting}
+          {/* Central action buttons */}
+          {isOwner && room.votingStatus === 'idle' && (
+            <button className="btn-primary" onClick={handleStartVoting}
               style={{ padding: '0.75rem 2rem', fontSize: '0.95rem' }}
             >
+              Start Voting
+            </button>
+          )}
+          {isOwner && room.votingStatus === 'active' && (
+            <button className="btn-primary" onClick={handleCloseVoting}
+              style={{ padding: '0.75rem 2rem', fontSize: '0.95rem', background: '#e8a854', boxShadow: 'none' }}
+            >
               Reveal Cards
+            </button>
+          )}
+          {isOwner && room.votingStatus === 'closed' && (
+            <button className="btn-primary" onClick={handleResetVoting}
+              style={{ padding: '0.75rem 2rem', fontSize: '0.95rem' }}
+            >
+              New Round
             </button>
           )}
 

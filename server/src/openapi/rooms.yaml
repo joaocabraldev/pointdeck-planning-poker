@@ -139,6 +139,65 @@ paths:
         '401':
           description: Unauthorized
 
+  /rooms/{id}/owner:
+    post:
+      tags:
+        - Rooms
+      summary: Transfer room ownership
+      description: Transfers room ownership to another participant. Only the current owner can transfer ownership. The new owner must be a current participant and cannot be the current owner.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: Room ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - userId
+              properties:
+                userId:
+                  type: string
+                  description: User ID of the new owner (must be a current participant)
+                  example: 01HXYZ456DEF789GHI123ABC
+      responses:
+        '200':
+          description: Ownership transferred successfully
+        '400':
+          description: Invalid transfer target
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                selfTransfer:
+                  value:
+                    error: "Cannot transfer ownership to yourself"
+                notParticipant:
+                  value:
+                    error: "Target user is not a participant in this room"
+        '403':
+          description: Only the room owner can transfer ownership
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Room not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+
   /rooms/{id}/voting/start:
     post:
       tags:

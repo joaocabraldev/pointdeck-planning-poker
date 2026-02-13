@@ -306,6 +306,100 @@ describe("API Tests", () => {
       });
     });
 
+    describe("POST /rooms/:id/owner", () => {
+      it("should allow owner to transfer ownership to a participant", async () => {
+        // Join as participant
+        await request(app)
+          .post(`/rooms/${roomId}/join`)
+          .set("Authorization", `Bearer ${participantToken}`);
+
+        // Transfer ownership
+        await request(app)
+          .post(`/rooms/${roomId}/owner`)
+          .set("Authorization", `Bearer ${ownerToken}`)
+          .send({ userId: participantId })
+          .expect(200);
+
+        // Verify new owner
+        const room = await request(app)
+          .get(`/rooms/${roomId}`)
+          .set("Authorization", `Bearer ${ownerToken}`);
+
+        expect(room.body.created_by.id).toBe(participantId);
+      });
+
+      it("should not allow non-owner to transfer ownership", async () => {
+        // Join as participant
+        await request(app)
+          .post(`/rooms/${roomId}/join`)
+          .set("Authorization", `Bearer ${participantToken}`);
+
+        const response = await request(app)
+          .post(`/rooms/${roomId}/owner`)
+          .set("Authorization", `Bearer ${participantToken}`)
+          .send({ userId: participantId })
+          .expect(403);
+
+        expect(response.body.error).toBe("Only the room owner can transfer ownership");
+      });
+
+      it("should not allow transferring to non-participant", async () => {
+        // participantId has NOT joined the room
+        const response = await request(app)
+          .post(`/rooms/${roomId}/owner`)
+          .set("Authorization", `Bearer ${ownerToken}`)
+          .send({ userId: participantId })
+          .expect(400);
+
+        expect(response.body.error).toBe("Target user is not a participant in this room");
+      });
+
+      it("should not allow transferring to yourself", async () => {
+        const response = await request(app)
+          .post(`/rooms/${roomId}/owner`)
+          .set("Authorization", `Bearer ${ownerToken}`)
+          .send({ userId: ownerId })
+          .expect(400);
+
+        expect(response.body.error).toBe("Cannot transfer ownership to yourself");
+      });
+
+      it("should return 404 for non-existent room", async () => {
+        await request(app)
+          .post("/rooms/non-existent-id/owner")
+          .set("Authorization", `Bearer ${ownerToken}`)
+          .send({ userId: participantId })
+          .expect(404);
+      });
+
+      it("should allow new owner to perform owner actions after transfer", async () => {
+        // Join as participant
+        await request(app)
+          .post(`/rooms/${roomId}/join`)
+          .set("Authorization", `Bearer ${participantToken}`);
+
+        // Transfer ownership
+        await request(app)
+          .post(`/rooms/${roomId}/owner`)
+          .set("Authorization", `Bearer ${ownerToken}`)
+          .send({ userId: participantId })
+          .expect(200);
+
+        // New owner should be able to start voting
+        await request(app)
+          .post(`/rooms/${roomId}/voting/start`)
+          .set("Authorization", `Bearer ${participantToken}`)
+          .expect(200);
+
+        // Verify voting started
+        const room = await request(app)
+          .get(`/rooms/${roomId}`)
+          .set("Authorization", `Bearer ${ownerToken}`);
+
+        expect(room.body.votingStatus).toBe("active");
+      });
+    });
+
     describe("POST /rooms/:id/start-voting", () => {
       it("should allow owner to start voting", async () => {
         await request(app)

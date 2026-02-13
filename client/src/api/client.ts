@@ -110,6 +110,10 @@ class ApiClient {
     return this.request('DELETE', `/rooms/${roomId}/participants/${participantId}`);
   }
 
+  async transferOwnership(roomId: string, userId: string): Promise<void> {
+    return this.request('POST', `/rooms/${roomId}/owner`, { userId });
+  }
+
   // Voting
   async startVoting(roomId: string): Promise<void> {
     return this.request('POST', `/rooms/${roomId}/voting/start`);
