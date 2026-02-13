@@ -8,15 +8,18 @@ interface SessionState {
   session: session | null;
   isLoading: boolean;
   error: string | null;
+  lastRoomId: string | null;
   loadSession: () => Promise<void>;
   signup: (name: string) => Promise<void>;
   logout: () => void;
+  setLastRoom: (roomId: string) => void;
 }
 
 const useSessionStore = create<SessionState>((set) => ({
   session: null,
   isLoading: false,
   error: null,
+  lastRoomId: storage.getItem<string>("lastRoomId"),
 
   loadSession: async () => {
     const stored = storage.getItem<session>("session");
@@ -56,9 +59,15 @@ const useSessionStore = create<SessionState>((set) => ({
 
   logout: () => {
     storage.removeItem("session");
+    storage.removeItem("lastRoomId");
     apiClient.clearToken();
     socketManager.disconnect();
-    set({ session: null });
+    set({ session: null, lastRoomId: null });
+  },
+
+  setLastRoom: (roomId: string) => {
+    storage.setItem("lastRoomId", roomId);
+    set({ lastRoomId: roomId });
   },
 }));
 

@@ -14,6 +14,7 @@ function getAvatarColor(name: string) {
 function Welcome() {
   const session = useSessionStore((s) => s.session);
   const logout = useSessionStore((s) => s.logout);
+  const lastRoomId = useSessionStore((s) => s.lastRoomId);
   const navigate = useNavigate();
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -84,14 +85,26 @@ function Welcome() {
             Create a room and invite your team to start estimating
           </p>
 
-          <button
-            className="btn-primary"
-            onClick={handleCreateRoom}
-            disabled={isCreating}
-            style={{ padding: '0.875rem 2rem', fontSize: '1rem' }}
-          >
-            {isCreating ? 'Creating...' : '+ Create New Room'}
-          </button>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', alignItems: 'center' }}>
+            <button
+              className="btn-primary"
+              onClick={handleCreateRoom}
+              disabled={isCreating}
+              style={{ padding: '0.875rem 2rem', fontSize: '1rem' }}
+            >
+              {isCreating ? 'Creating...' : '+ Create New Room'}
+            </button>
+
+            {lastRoomId && (
+              <button
+                className="btn-outline"
+                onClick={() => navigate(`/rooms/${lastRoomId}`)}
+                style={{ padding: '0.625rem 1.5rem', fontSize: '0.9rem' }}
+              >
+                Return to Last Room
+              </button>
+            )}
+          </div>
 
           {error && <p className="toast toast-error" style={{ marginTop: '1rem' }}>{error}</p>}
         </div>

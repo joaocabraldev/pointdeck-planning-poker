@@ -270,6 +270,7 @@ function Room() {
   const { roomId } = useParams<{ roomId: string }>();
   const navigate = useNavigate();
   const session = useSessionStore((s) => s.session);
+  const setLastRoom = useSessionStore((s) => s.setLastRoom);
 
   const [room, setRoom] = useState<RoomResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -292,6 +293,7 @@ function Room() {
         await apiClient.joinRoom(roomId);
         const roomData = await apiClient.getRoom(roomId);
         setRoom(roomData);
+        setLastRoom(roomId);
         setError(null);
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Failed to load room';
