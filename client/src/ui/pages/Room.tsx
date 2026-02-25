@@ -399,8 +399,9 @@ function Room() {
       setShareMessage('Room link copied!');
       setTimeout(() => setShareMessage(null), 3000);
     }).catch(() => {
-      setShareMessage('Failed to copy link');
-      setTimeout(() => setShareMessage(null), 3000);
+      const roomPath = window.location.pathname;
+      setShareMessage(`Sorry, it wasn't possible to copy.\nShare this link: https://pointdeck.app${roomPath}`);
+      setTimeout(() => setShareMessage(null), 5000);
     });
   };
 
@@ -469,7 +470,7 @@ function Room() {
         {/* ── Toasts ── */}
         {(shareMessage || error) && (
           <div style={{ padding: '0.75rem 1.5rem 0' }}>
-            {shareMessage && <p className="toast toast-success">{shareMessage}</p>}
+            {shareMessage && <p className="toast toast-success" style={{ whiteSpace: 'pre-line' }}>{shareMessage}</p>}
             {error && <p className="toast toast-error">{error}</p>}
           </div>
         )}
