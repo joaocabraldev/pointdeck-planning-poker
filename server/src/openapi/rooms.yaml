@@ -233,6 +233,9 @@ paths:
         '401':
           description: Unauthorized
 
+  /rooms/{id}/start-voting:
+    $ref: '#/paths/~1rooms~1{id}~1voting~1start'
+
   /rooms/{id}/votes:
     post:
       tags:
@@ -316,6 +319,9 @@ paths:
         '401':
           description: Unauthorized
 
+  /rooms/{id}/vote:
+    $ref: '#/paths/~1rooms~1{id}~1votes'
+
   /rooms/{id}/voting/close:
     post:
       tags:
@@ -351,6 +357,9 @@ paths:
         '401':
           description: Unauthorized
 
+  /rooms/{id}/close-voting:
+    $ref: '#/paths/~1rooms~1{id}~1voting~1close'
+
   /rooms/{id}/voting/reset:
     post:
       tags:
@@ -379,6 +388,9 @@ paths:
           description: Room not found
         '401':
           description: Unauthorized
+
+  /rooms/{id}/reset-voting:
+    $ref: '#/paths/~1rooms~1{id}~1voting~1reset'
 
   /rooms/{id}/agreed-value:
     post:
