@@ -10,7 +10,7 @@ You can use it in https://pointdeck.app
 
 ## Demo
 
-<video src="./docs/assets/pointdeck_app_demo.mp4" controls></video>
+<video src="./docs/assets/pointdeck_app_demo.mp4" controls preload="none" width="1423" height="855" title="Pointdeck application demo video" aria-label="Pointdeck application demo video"></video>
 
 [Watch the Pointdeck demo video](./docs/assets/pointdeck_app_demo.mp4)
 
