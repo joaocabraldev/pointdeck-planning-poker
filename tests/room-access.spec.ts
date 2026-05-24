@@ -33,7 +33,7 @@ test.describe('Room Access and Authentication', () => {
     await expect(page).toHaveURL(`${BASE_URL}/rooms/${roomId}`);
   });
 
-  test('should allow authenticated user to access room directly', async ({ page }) => {
+  test('should allow authenticated user to return to a room', async ({ page }) => {
     // First authenticate
     await page.goto(BASE_URL);
     await page.evaluate(() => localStorage.clear());
@@ -47,11 +47,10 @@ test.describe('Room Access and Authentication', () => {
     const roomUrl = page.url();
     const roomId = roomUrl.split('/rooms/')[1];
 
-    // Navigate away
-    await page.goto(BASE_URL + '/');
-
-    // Access the room directly
-    await page.goto(`${BASE_URL}/rooms/${roomId}`);
+    // Navigate away through the app and return to the same room
+    await page.getByRole('button', { name: /Home/i }).click();
+    await expect(page).toHaveURL(BASE_URL + '/');
+    await page.getByRole('button', { name: /Return to Last Room/i }).click();
 
     // Should be on the room page, not redirected
     await expect(page).toHaveURL(`${BASE_URL}/rooms/${roomId}`);

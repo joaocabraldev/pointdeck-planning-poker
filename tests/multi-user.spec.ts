@@ -45,7 +45,7 @@ test.describe('Multi-User Voting', () => {
     await expect(ownerPage.getByText('Participant User', { exact: true })).toBeVisible();
 
     // Participant page should show both users
-    await expect(participantPage.getByText('Owner User', { exact: true })).toBeVisible();
+    await expect(participantPage.getByText(/Owner User.*👑/i)).toBeVisible();
     await expect(participantPage.getByText('Participant User', { exact: true })).toBeVisible();
 
     await owner.close();
@@ -164,7 +164,7 @@ test.describe('Multi-User Voting', () => {
     await expect(ownerPage.getByText('Bob', { exact: true })).toBeVisible();
     await expect(ownerPage.getByText('XS', { exact: true }).first()).toBeVisible();
     await expect(ownerPage.getByText('L', { exact: true }).first()).toBeVisible();
-    await expect(participantPage.getByText('Alice', { exact: true })).toBeVisible();
+    await expect(participantPage.getByText(/Alice.*👑/i)).toBeVisible();
     await expect(participantPage.getByText('Bob', { exact: true })).toBeVisible();
     await expect(participantPage.getByText('XS', { exact: true }).first()).toBeVisible();
     await expect(participantPage.getByText('L', { exact: true }).first()).toBeVisible();

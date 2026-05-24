@@ -78,6 +78,7 @@ test.describe('Participant Management', () => {
     await ownerPage.getByPlaceholder('Your name').fill('Owner');
     await ownerPage.getByRole('button', { name: /Continue/i }).click();
     await ownerPage.getByRole('button', { name: /Create New Room/i }).click();
+    await expect(ownerPage).toHaveURL(/\/rooms\/.+/);
     const roomUrl = ownerPage.url();
 
     // Setup participant
@@ -116,6 +117,7 @@ test.describe('Participant Management', () => {
     await ownerPage.getByPlaceholder('Your name').fill('Owner');
     await ownerPage.getByRole('button', { name: /Continue/i }).click();
     await ownerPage.getByRole('button', { name: /Create New Room/i }).click();
+    await expect(ownerPage).toHaveURL(/\/rooms\/.+/);
     const roomUrl = ownerPage.url();
 
     // Setup participant
@@ -146,6 +148,7 @@ test.describe('Participant Management', () => {
     await ownerPage.getByPlaceholder('Your name').fill('Owner');
     await ownerPage.getByRole('button', { name: /Continue/i }).click();
     await ownerPage.getByRole('button', { name: /Create New Room/i }).click();
+    await expect(ownerPage).toHaveURL(/\/rooms\/.+/);
     const roomUrl = ownerPage.url();
 
     // Setup participant
