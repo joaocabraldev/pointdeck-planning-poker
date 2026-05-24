@@ -1,6 +1,37 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type APIRequestContext, type Browser, type Page } from '@playwright/test';
 
 const BASE_URL = 'http://localhost:5173';
+const API_URL = 'http://localhost:3000';
+
+async function createAuthenticatedPage(browser: Browser, request: APIRequestContext, userName: string) {
+  const sessionResponse = await request.post(`${API_URL}/session`, {
+    data: { name: userName },
+  });
+  expect(sessionResponse.ok()).toBeTruthy();
+
+  const sessionBody = await sessionResponse.json();
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  await page.addInitScript((storedSession) => {
+    localStorage.setItem('session', JSON.stringify(storedSession));
+  }, {
+    user: sessionBody.user,
+    id: sessionBody.user.id,
+    token: sessionBody.token,
+  });
+
+  await page.goto(BASE_URL);
+  await expect(page).toHaveURL(BASE_URL + '/');
+  await expect(page.getByText(userName, { exact: true }).first()).toBeVisible();
+
+  return { context, page };
+}
+
+async function createRoom(page: Page) {
+  await page.getByRole('button', { name: /Create New Room/i }).click();
+  await expect(page).toHaveURL(/\/rooms\/.+/);
+  return page.url();
+}
 
 test.describe('Share Room Functionality', () => {
   test.beforeEach(async ({ page }) => {
@@ -68,27 +99,13 @@ test.describe('Share Room Functionality', () => {
 });
 
 test.describe('Participant Management', () => {
-  test('owner should see remove button for other participants', async ({ browser }) => {
+  test('owner should see remove button for other participants', async ({ browser, request }) => {
     // Setup owner
-    const owner = await browser.newContext();
-    const ownerPage = await owner.newPage();
-    await ownerPage.goto(BASE_URL);
-    await ownerPage.evaluate(() => localStorage.clear());
-    await ownerPage.goto(`${BASE_URL}/signup`);
-    await ownerPage.getByPlaceholder('Your name').fill('Owner');
-    await ownerPage.getByRole('button', { name: /Continue/i }).click();
-    await ownerPage.getByRole('button', { name: /Create New Room/i }).click();
-    await expect(ownerPage).toHaveURL(/\/rooms\/.+/);
-    const roomUrl = ownerPage.url();
+    const { context: owner, page: ownerPage } = await createAuthenticatedPage(browser, request, 'Owner');
+    const roomUrl = await createRoom(ownerPage);
 
     // Setup participant
-    const participant = await browser.newContext();
-    const participantPage = await participant.newPage();
-    await participantPage.goto(BASE_URL);
-    await participantPage.evaluate(() => localStorage.clear());
-    await participantPage.goto(`${BASE_URL}/signup`);
-    await participantPage.getByPlaceholder('Your name').fill('Participant');
-    await participantPage.getByRole('button', { name: /Continue/i }).click();
+    const { context: participant, page: participantPage } = await createAuthenticatedPage(browser, request, 'Participant');
     await participantPage.goto(roomUrl);
     await expect(participantPage.getByText('Participant', { exact: true })).toBeVisible();
     await expect(ownerPage.getByText('Participant', { exact: true })).toBeVisible();
@@ -107,27 +124,13 @@ test.describe('Participant Management', () => {
     await participant.close();
   });
 
-  test('participant should NOT see remove buttons', async ({ browser }) => {
+  test('participant should NOT see remove buttons', async ({ browser, request }) => {
     // Setup owner
-    const owner = await browser.newContext();
-    const ownerPage = await owner.newPage();
-    await ownerPage.goto(BASE_URL);
-    await ownerPage.evaluate(() => localStorage.clear());
-    await ownerPage.goto(`${BASE_URL}/signup`);
-    await ownerPage.getByPlaceholder('Your name').fill('Owner');
-    await ownerPage.getByRole('button', { name: /Continue/i }).click();
-    await ownerPage.getByRole('button', { name: /Create New Room/i }).click();
-    await expect(ownerPage).toHaveURL(/\/rooms\/.+/);
-    const roomUrl = ownerPage.url();
+    const { context: owner, page: ownerPage } = await createAuthenticatedPage(browser, request, 'Owner');
+    const roomUrl = await createRoom(ownerPage);
 
     // Setup participant
-    const participant = await browser.newContext();
-    const participantPage = await participant.newPage();
-    await participantPage.goto(BASE_URL);
-    await participantPage.evaluate(() => localStorage.clear());
-    await participantPage.goto(`${BASE_URL}/signup`);
-    await participantPage.getByPlaceholder('Your name').fill('Participant');
-    await participantPage.getByRole('button', { name: /Continue/i }).click();
+    const { context: participant, page: participantPage } = await createAuthenticatedPage(browser, request, 'Participant');
     await participantPage.goto(roomUrl);
     await expect(participantPage.getByText('Participant', { exact: true })).toBeVisible();
 
@@ -138,27 +141,13 @@ test.describe('Participant Management', () => {
     await participant.close();
   });
 
-  test('should remove participant from room', async ({ browser }) => {
+  test('should remove participant from room', async ({ browser, request }) => {
     // Setup owner
-    const owner = await browser.newContext();
-    const ownerPage = await owner.newPage();
-    await ownerPage.goto(BASE_URL);
-    await ownerPage.evaluate(() => localStorage.clear());
-    await ownerPage.goto(`${BASE_URL}/signup`);
-    await ownerPage.getByPlaceholder('Your name').fill('Owner');
-    await ownerPage.getByRole('button', { name: /Continue/i }).click();
-    await ownerPage.getByRole('button', { name: /Create New Room/i }).click();
-    await expect(ownerPage).toHaveURL(/\/rooms\/.+/);
-    const roomUrl = ownerPage.url();
+    const { context: owner, page: ownerPage } = await createAuthenticatedPage(browser, request, 'Owner');
+    const roomUrl = await createRoom(ownerPage);
 
     // Setup participant
-    const participant = await browser.newContext();
-    const participantPage = await participant.newPage();
-    await participantPage.goto(BASE_URL);
-    await participantPage.evaluate(() => localStorage.clear());
-    await participantPage.goto(`${BASE_URL}/signup`);
-    await participantPage.getByPlaceholder('Your name').fill('ToBeRemoved');
-    await participantPage.getByRole('button', { name: /Continue/i }).click();
+    const { context: participant, page: participantPage } = await createAuthenticatedPage(browser, request, 'ToBeRemoved');
     await participantPage.goto(roomUrl);
     await expect(participantPage.getByText('ToBeRemoved', { exact: true })).toBeVisible();
     await expect(ownerPage.getByText('ToBeRemoved', { exact: true })).toBeVisible();
