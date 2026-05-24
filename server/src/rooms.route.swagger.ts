@@ -5,7 +5,7 @@
  *     tags:
  *       - Rooms
  *     summary: Join a poker planning room
- *     description: Adds the authenticated user to the room's participant list
+ *     description: Adds the authenticated user to the room's participant list. If the room no longer exists, recreates it with the requested ID and makes the authenticated user the owner and first participant.
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -17,9 +17,9 @@
  *         description: Room ID
  *     responses:
  *       200:
- *         description: Successfully joined the room
+ *         description: Successfully joined the room, or recreated and joined a missing room
  *       404:
- *         description: Room not found
+ *         description: Reserved for room lookup failures
  *         content:
  *           application/json:
  *             schema:

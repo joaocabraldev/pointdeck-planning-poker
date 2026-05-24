@@ -7,32 +7,25 @@ import { emitRoomUpdate } from "./socket.js";
 
 const router = Router();
 
-router.post("/rooms", authenticate, (req: AuthRequest, res: Response) => {
-  const userId = req.user!.id;
-  const userName = req.user!.name;
-
-  const roomId = ulid();
-
-  const room: PokerPlanningRoom = {
-    id: roomId,
-    owner: userId,
+function createRoom(id: string, owner: string, name?: string): PokerPlanningRoom {
+  return store.createRoom({
+    id,
+    name,
+    owner,
     createdAt: new Date(),
-    participants: [userId], // Creator is automatically a participant
+    participants: [owner],
     votes: {},
     votingStatus: "idle",
     revealed: false,
-  };
-
-  store.createRoom(room);
-
-  // Map participant IDs to detailed participant objects
-  const participantDetails = room.participants.map(participantId => {
-    const user = store.getUser(participantId);
-    return {
-      id: participantId,
-      name: user?.name || "Unknown"
-    };
   });
+}
+
+router.post("/rooms", authenticate, (req: AuthRequest, res: Response) => {
+  const userId = req.user!.id;
+  const { name } = req.body || {};
+
+  const roomId = ulid();
+  createRoom(roomId, userId, name);
 
   res.json({ room_id: roomId });
 });
@@ -85,9 +78,10 @@ router.post("/rooms/:id/join", authenticate, (req: AuthRequest, res: Response) =
   const id = req.params.id as string;
   const userId = req.user!.id;
 
-  const room = store.getRoom(id);
+  let room = store.getRoom(id);
   if (!room) {
-    return res.status(404).json({ error: "Room not found" });
+    createRoom(id, userId);
+    return res.status(200).send();
   }
 
   // Add participant if not already in room
