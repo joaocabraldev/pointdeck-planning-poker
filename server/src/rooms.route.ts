@@ -7,32 +7,25 @@ import { emitRoomUpdate } from "./socket.js";
 
 const router = Router();
 
-router.post("/rooms", authenticate, (req: AuthRequest, res: Response) => {
-  const userId = req.user!.id;
-  const userName = req.user!.name;
-
-  const roomId = ulid();
-
-  const room: PokerPlanningRoom = {
-    id: roomId,
-    owner: userId,
+function createRoom(id: string, owner: string, name?: string): PokerPlanningRoom {
+  return store.createRoom({
+    id,
+    name,
+    owner,
     createdAt: new Date(),
-    participants: [userId], // Creator is automatically a participant
+    participants: [owner],
     votes: {},
     votingStatus: "idle",
     revealed: false,
-  };
-
-  store.createRoom(room);
-
-  // Map participant IDs to detailed participant objects
-  const participantDetails = room.participants.map(participantId => {
-    const user = store.getUser(participantId);
-    return {
-      id: participantId,
-      name: user?.name || "Unknown"
-    };
   });
+}
+
+router.post("/rooms", authenticate, (req: AuthRequest, res: Response) => {
+  const userId = req.user!.id;
+  const { name } = req.body || {};
+
+  const roomId = ulid();
+  createRoom(roomId, userId, name);
 
   res.json({ room_id: roomId });
 });
@@ -85,9 +78,10 @@ router.post("/rooms/:id/join", authenticate, (req: AuthRequest, res: Response) =
   const id = req.params.id as string;
   const userId = req.user!.id;
 
-  const room = store.getRoom(id);
+  let room = store.getRoom(id);
   if (!room) {
-    return res.status(404).json({ error: "Room not found" });
+    createRoom(id, userId);
+    return res.status(200).send();
   }
 
   // Add participant if not already in room
@@ -191,8 +185,7 @@ router.get("/rooms/:id", authenticate, (req: AuthRequest, res: Response) => {
   res.json(getRoomResponse(room, store));
 });
 
-// Submit or update a vote
-router.post("/rooms/:id/votes", authenticate, (req: AuthRequest, res: Response) => {
+const submitVote = (req: AuthRequest, res: Response) => {
   const id = req.params.id as string;
   const userId = req.user!.id;
   const { vote } = req.body || {};
@@ -226,10 +219,9 @@ router.post("/rooms/:id/votes", authenticate, (req: AuthRequest, res: Response) 
   emitRoomUpdate(id);
 
   res.status(200).send();
-});
+};
 
-// Cancel vote
-router.delete("/rooms/:id/votes", authenticate, (req: AuthRequest, res: Response) => {
+const cancelVote = (req: AuthRequest, res: Response) => {
   const id = req.params.id as string;
   const userId = req.user!.id;
 
@@ -251,10 +243,9 @@ router.delete("/rooms/:id/votes", authenticate, (req: AuthRequest, res: Response
   emitRoomUpdate(id);
 
   res.status(200).send();
-});
+};
 
-// Start voting
-router.post("/rooms/:id/voting/start", authenticate, (req: AuthRequest, res: Response) => {
+const startVoting = (req: AuthRequest, res: Response) => {
   const id = req.params.id as string;
   const userId = req.user!.id;
 
@@ -287,10 +278,9 @@ router.post("/rooms/:id/voting/start", authenticate, (req: AuthRequest, res: Res
   emitRoomUpdate(id);
 
   res.status(200).send();
-});
+};
 
-// Close voting
-router.post("/rooms/:id/voting/close", authenticate, (req: AuthRequest, res: Response) => {
+const closeVoting = (req: AuthRequest, res: Response) => {
   const id = req.params.id as string;
   const userId = req.user!.id;
 
@@ -320,10 +310,9 @@ router.post("/rooms/:id/voting/close", authenticate, (req: AuthRequest, res: Res
   emitRoomUpdate(id);
 
   res.status(200).send();
-});
+};
 
-// Reset voting
-router.post("/rooms/:id/voting/reset", authenticate, (req: AuthRequest, res: Response) => {
+const resetVoting = (req: AuthRequest, res: Response) => {
   const id = req.params.id as string;
   const userId = req.user!.id;
 
@@ -351,7 +340,27 @@ router.post("/rooms/:id/voting/reset", authenticate, (req: AuthRequest, res: Res
   emitRoomUpdate(id);
 
   res.status(200).send();
-});
+};
+
+// Submit or update a vote
+router.post("/rooms/:id/votes", authenticate, submitVote);
+router.post("/rooms/:id/vote", authenticate, submitVote);
+
+// Cancel vote
+router.delete("/rooms/:id/votes", authenticate, cancelVote);
+router.delete("/rooms/:id/vote", authenticate, cancelVote);
+
+// Start voting
+router.post("/rooms/:id/voting/start", authenticate, startVoting);
+router.post("/rooms/:id/start-voting", authenticate, startVoting);
+
+// Close voting
+router.post("/rooms/:id/voting/close", authenticate, closeVoting);
+router.post("/rooms/:id/close-voting", authenticate, closeVoting);
+
+// Reset voting
+router.post("/rooms/:id/voting/reset", authenticate, resetVoting);
+router.post("/rooms/:id/reset-voting", authenticate, resetVoting);
 
 // Set agreed value (consensus estimate)
 router.post("/rooms/:id/agreed-value", authenticate, (req: AuthRequest, res: Response) => {

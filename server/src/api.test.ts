@@ -274,11 +274,33 @@ describe("API Tests", () => {
         });
       });
 
-      it("should return 404 for non-existent room", async () => {
+      it("should recreate a missing room with the requested ID", async () => {
+        const fixedRoomId = "fixed-team-room";
+
         await request(app)
-          .post("/rooms/non-existent-id/join")
+          .post(`/rooms/${fixedRoomId}/join`)
           .set("Authorization", `Bearer ${participantToken}`)
-          .expect(404);
+          .expect(200);
+
+        const room = await request(app)
+          .get(`/rooms/${fixedRoomId}`)
+          .set("Authorization", `Bearer ${participantToken}`)
+          .expect(200);
+
+        expect(room.body.room_id).toBe(fixedRoomId);
+        expect(room.body.created_by).toEqual({
+          id: participantId,
+          name: participantName,
+        });
+        expect(room.body.participants).toEqual([
+          {
+            id: participantId,
+            name: participantName,
+          },
+        ]);
+        expect(room.body.votes).toEqual({});
+        expect(room.body.votingStatus).toBe("idle");
+        expect(room.body.revealed).toBe(false);
       });
     });
 

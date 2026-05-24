@@ -26,35 +26,35 @@ test.describe('Room Access and Authentication', () => {
     await expect(page).toHaveURL(`${BASE_URL}/signup`);
 
     // Sign up
-    await page.getByPlaceholder('Enter your name').fill('Test User');
+    await page.getByPlaceholder('Your name').fill('Test User');
     await page.getByRole('button', { name: /Continue/i }).click();
 
     // Should redirect to the intended room
     await expect(page).toHaveURL(`${BASE_URL}/rooms/${roomId}`);
   });
 
-  test('should allow authenticated user to access room directly', async ({ page }) => {
+  test('should allow authenticated user to return to a room', async ({ page }) => {
     // First authenticate
     await page.goto(BASE_URL);
     await page.evaluate(() => localStorage.clear());
     await page.goto(`${BASE_URL}/signup`);
-    await page.getByPlaceholder('Enter your name').fill('Authenticated User');
+    await page.getByPlaceholder('Your name').fill('Authenticated User');
     await page.getByRole('button', { name: /Continue/i }).click();
 
     // Create a room to get a valid room ID
     await page.getByRole('button', { name: /Create New Room/i }).click();
+    await expect(page).toHaveURL(/\/rooms\/.+/);
     const roomUrl = page.url();
     const roomId = roomUrl.split('/rooms/')[1];
 
-    // Navigate away
-    await page.goto(BASE_URL + '/');
-
-    // Access the room directly
-    await page.goto(`${BASE_URL}/rooms/${roomId}`);
+    // Navigate away through the app and return to the same room
+    await page.getByRole('button', { name: /Home/i }).click();
+    await expect(page).toHaveURL(BASE_URL + '/');
+    await page.getByRole('button', { name: /Return to Last Room/i }).click();
 
     // Should be on the room page, not redirected
     await expect(page).toHaveURL(`${BASE_URL}/rooms/${roomId}`);
-    await expect(page.getByText(/Poker Planning Room/i)).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Planning Room/i })).toBeVisible();
   });
 
   test('should preserve authentication across page reloads in room', async ({ page }) => {
@@ -62,9 +62,10 @@ test.describe('Room Access and Authentication', () => {
     await page.goto(BASE_URL);
     await page.evaluate(() => localStorage.clear());
     await page.goto(`${BASE_URL}/signup`);
-    await page.getByPlaceholder('Enter your name').fill('Reload Test User');
+    await page.getByPlaceholder('Your name').fill('Reload Test User');
     await page.getByRole('button', { name: /Continue/i }).click();
     await page.getByRole('button', { name: /Create New Room/i }).click();
+    await expect(page).toHaveURL(/\/rooms\/.+/);
 
     const roomUrl = page.url();
 
@@ -73,7 +74,7 @@ test.describe('Room Access and Authentication', () => {
 
     // Should still be on the room page
     await expect(page).toHaveURL(roomUrl);
-    await expect(page.getByText(/Poker Planning Room/i)).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Planning Room/i })).toBeVisible();
   });
 });
 
