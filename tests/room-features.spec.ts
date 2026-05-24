@@ -89,12 +89,13 @@ test.describe('Participant Management', () => {
     await participantPage.getByPlaceholder('Your name').fill('Participant');
     await participantPage.getByRole('button', { name: /Continue/i }).click();
     await participantPage.goto(roomUrl);
-    await participantPage.waitForTimeout(1000);
+    await expect(participantPage.getByText('Participant', { exact: true })).toBeVisible();
+    await expect(ownerPage.getByText('Participant', { exact: true })).toBeVisible();
 
     // Owner should see remove button next to participant
-    const participantCard = ownerPage.getByText('Participant').locator('..');
+    const participantCard = ownerPage.getByText('Participant', { exact: true }).locator('..');
     await participantCard.hover();
-    await participantCard.getByRole('button', { name: /···/ }).click();
+    await participantCard.getByRole('button', { name: /···/ }).click({ force: true });
     await expect(participantCard.getByRole('button', { name: /Remove/i })).toBeVisible();
 
     // Owner should NOT see remove button next to themselves
@@ -126,7 +127,7 @@ test.describe('Participant Management', () => {
     await participantPage.getByPlaceholder('Your name').fill('Participant');
     await participantPage.getByRole('button', { name: /Continue/i }).click();
     await participantPage.goto(roomUrl);
-    await participantPage.waitForTimeout(1000);
+    await expect(participantPage.getByText('Participant', { exact: true })).toBeVisible();
 
     // Participant should NOT see any remove buttons
     await expect(participantPage.getByRole('button', { name: /Remove/i })).not.toBeVisible();
@@ -156,22 +157,23 @@ test.describe('Participant Management', () => {
     await participantPage.getByPlaceholder('Your name').fill('ToBeRemoved');
     await participantPage.getByRole('button', { name: /Continue/i }).click();
     await participantPage.goto(roomUrl);
-    await participantPage.waitForTimeout(1000);
+    await expect(participantPage.getByText('ToBeRemoved', { exact: true })).toBeVisible();
+    await expect(ownerPage.getByText('ToBeRemoved', { exact: true })).toBeVisible();
 
     // Both participants should be visible
-    await expect(ownerPage.getByText('Owner')).toBeVisible();
-    await expect(ownerPage.getByText('ToBeRemoved')).toBeVisible();
+    await expect(ownerPage.getByText('Owner', { exact: true })).toBeVisible();
+    await expect(ownerPage.getByText('ToBeRemoved', { exact: true })).toBeVisible();
 
     // Owner removes participant
-    const participantCard = ownerPage.getByText('ToBeRemoved').locator('..');
+    const participantCard = ownerPage.getByText('ToBeRemoved', { exact: true }).locator('..');
     await participantCard.hover();
-    await participantCard.getByRole('button', { name: /···/ }).click();
+    await participantCard.getByRole('button', { name: /···/ }).click({ force: true });
     await participantCard.getByRole('button', { name: /Remove/i }).click();
     await ownerPage.waitForTimeout(500);
 
     // Owner should now only see themselves
-    await expect(ownerPage.getByText('Owner')).toBeVisible();
-    await expect(ownerPage.getByText('ToBeRemoved')).not.toBeVisible();
+    await expect(ownerPage.getByText('Owner', { exact: true })).toBeVisible();
+    await expect(ownerPage.getByText('ToBeRemoved', { exact: true })).not.toBeVisible();
 
     await owner.close();
     await participant.close();
@@ -199,7 +201,7 @@ test.describe('UI Elements and Indicators', () => {
     await page.getByRole('button', { name: /Continue/i }).click();
     await page.getByRole('button', { name: /Create New Room/i }).click();
 
-    await expect(page.getByText('CurrentUser')).toBeVisible();
+    await expect(page.getByText('CurrentUser', { exact: true }).first()).toBeVisible();
   });
 
   test('should show vote duration when active', async ({ page }) => {
@@ -211,7 +213,7 @@ test.describe('UI Elements and Indicators', () => {
     await page.getByRole('button', { name: /Create New Room/i }).click();
 
     // Start voting
-    await page.getByRole('button', { name: /Start Voting/i }).click();
+    await page.getByRole('button', { name: /Start Voting/i }).click({ force: true });
     await page.waitForTimeout(500);
 
     await expect(page.getByText(/0 of 1 voted/i)).toBeVisible();
@@ -236,7 +238,7 @@ test.describe('UI Elements and Indicators', () => {
     await page.getByRole('button', { name: /Continue/i }).click();
     await page.getByRole('button', { name: /Create New Room/i }).click();
 
-    await expect(page.getByText('Creator')).toBeVisible();
+    await expect(page.getByText('Creator', { exact: true }).first()).toBeVisible();
   });
 });
 

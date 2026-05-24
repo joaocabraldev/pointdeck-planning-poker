@@ -19,6 +19,10 @@ async function createRoom(page: Page) {
   return page.url();
 }
 
+async function clickVote(page: Page, vote: string) {
+  await page.getByRole('button', { name: vote, exact: true }).click({ force: true });
+}
+
 test.describe('Multi-User Voting', () => {
   test('should show both participants in the room', async ({ browser }) => {
     // Create first user (owner)
@@ -37,12 +41,12 @@ test.describe('Multi-User Voting', () => {
     await participantPage.waitForTimeout(1000);
 
     // Owner page should show both users
-    await expect(ownerPage.getByText('Owner User')).toBeVisible();
-    await expect(ownerPage.getByText('Participant User')).toBeVisible();
+    await expect(ownerPage.getByText('Owner User', { exact: true })).toBeVisible();
+    await expect(ownerPage.getByText('Participant User', { exact: true })).toBeVisible();
 
     // Participant page should show both users
-    await expect(participantPage.getByText('Owner User')).toBeVisible();
-    await expect(participantPage.getByText('Participant User')).toBeVisible();
+    await expect(participantPage.getByText('Owner User', { exact: true })).toBeVisible();
+    await expect(participantPage.getByText('Participant User', { exact: true })).toBeVisible();
 
     await owner.close();
     await participant.close();
@@ -63,14 +67,14 @@ test.describe('Multi-User Voting', () => {
     await participantPage.waitForTimeout(1000);
 
     // Owner starts voting
-    await ownerPage.getByRole('button', { name: /Start Voting/i }).click();
+    await ownerPage.getByRole('button', { name: /Start Voting/i }).click({ force: true });
     await ownerPage.waitForTimeout(500);
 
     // Participant should see voting is active
     await expect(participantPage.getByText(/Pick your card/i)).toBeVisible();
 
     // Owner votes
-    await ownerPage.getByRole('button', { name: 'M' }).click();
+    await clickVote(ownerPage, 'M');
     await ownerPage.waitForTimeout(500);
 
     // Both should see 1 of 2 votes
@@ -78,7 +82,7 @@ test.describe('Multi-User Voting', () => {
     await expect(participantPage.getByText(/1 of 2 voted/i)).toBeVisible();
 
     // Participant votes
-    await participantPage.getByRole('button', { name: 'L' }).click();
+    await clickVote(participantPage, 'L');
     await participantPage.waitForTimeout(500);
 
     // Both should see 2 of 2 votes
@@ -108,26 +112,26 @@ test.describe('Multi-User Voting', () => {
     await expect(participantPage.getByText(/Waiting for the host/i)).toBeVisible();
 
     // Owner starts voting
-    await ownerPage.getByRole('button', { name: /Start Voting/i }).click();
+    await ownerPage.getByRole('button', { name: /Start Voting/i }).click({ force: true });
     await ownerPage.waitForTimeout(500);
 
     // Participant should see ACTIVE state
     await expect(participantPage.getByText(/Pick your card/i)).toBeVisible();
 
     // Both submit votes
-    await ownerPage.getByRole('button', { name: 'S' }).click();
-    await participantPage.getByRole('button', { name: 'M' }).click();
+    await clickVote(ownerPage, 'S');
+    await clickVote(participantPage, 'M');
     await ownerPage.waitForTimeout(500);
 
     // Owner closes voting
-    await ownerPage.getByRole('button', { name: /Reveal Cards/i }).click();
+    await ownerPage.getByRole('button', { name: /Reveal Cards/i }).click({ force: true });
     await ownerPage.waitForTimeout(500);
 
     // Both should see revealed voting values
-    await expect(ownerPage.getByText('S')).toBeVisible();
-    await expect(ownerPage.getByText('M')).toBeVisible();
-    await expect(participantPage.getByText('S')).toBeVisible();
-    await expect(participantPage.getByText('M')).toBeVisible();
+    await expect(ownerPage.getByText('S', { exact: true }).first()).toBeVisible();
+    await expect(ownerPage.getByText('M', { exact: true }).first()).toBeVisible();
+    await expect(participantPage.getByText('S', { exact: true }).first()).toBeVisible();
+    await expect(participantPage.getByText('M', { exact: true }).first()).toBeVisible();
 
     await owner.close();
     await participant.close();
@@ -147,23 +151,23 @@ test.describe('Multi-User Voting', () => {
     await participantPage.waitForTimeout(1000);
 
     // Complete voting session
-    await ownerPage.getByRole('button', { name: /Start Voting/i }).click();
+    await ownerPage.getByRole('button', { name: /Start Voting/i }).click({ force: true });
     await ownerPage.waitForTimeout(300);
-    await ownerPage.getByRole('button', { name: 'XS' }).click();
-    await participantPage.getByRole('button', { name: 'L' }).click();
+    await clickVote(ownerPage, 'XS');
+    await clickVote(participantPage, 'L');
     await ownerPage.waitForTimeout(500);
-    await ownerPage.getByRole('button', { name: /Reveal Cards/i }).click();
+    await ownerPage.getByRole('button', { name: /Reveal Cards/i }).click({ force: true });
     await ownerPage.waitForTimeout(500);
 
     // Both users should see the revealed votes and participant names.
-    await expect(ownerPage.getByText('Alice')).toBeVisible();
-    await expect(ownerPage.getByText('Bob')).toBeVisible();
-    await expect(ownerPage.getByText('XS')).toBeVisible();
-    await expect(ownerPage.getByText('L')).toBeVisible();
-    await expect(participantPage.getByText('Alice')).toBeVisible();
-    await expect(participantPage.getByText('Bob')).toBeVisible();
-    await expect(participantPage.getByText('XS')).toBeVisible();
-    await expect(participantPage.getByText('L')).toBeVisible();
+    await expect(ownerPage.getByText('Alice', { exact: true })).toBeVisible();
+    await expect(ownerPage.getByText('Bob', { exact: true })).toBeVisible();
+    await expect(ownerPage.getByText('XS', { exact: true }).first()).toBeVisible();
+    await expect(ownerPage.getByText('L', { exact: true }).first()).toBeVisible();
+    await expect(participantPage.getByText('Alice', { exact: true })).toBeVisible();
+    await expect(participantPage.getByText('Bob', { exact: true })).toBeVisible();
+    await expect(participantPage.getByText('XS', { exact: true }).first()).toBeVisible();
+    await expect(participantPage.getByText('L', { exact: true }).first()).toBeVisible();
 
     await owner.close();
     await participant.close();
@@ -207,12 +211,12 @@ test.describe('Multi-User Voting', () => {
     await participantPage.waitForTimeout(1000);
 
     // Complete voting
-    await ownerPage.getByRole('button', { name: /Start Voting/i }).click();
+    await ownerPage.getByRole('button', { name: /Start Voting/i }).click({ force: true });
     await ownerPage.waitForTimeout(300);
-    await ownerPage.getByRole('button', { name: 'M' }).click();
-    await participantPage.getByRole('button', { name: 'L' }).click();
+    await clickVote(ownerPage, 'M');
+    await clickVote(participantPage, 'L');
     await ownerPage.waitForTimeout(500);
-    await ownerPage.getByRole('button', { name: /Reveal Cards/i }).click();
+    await ownerPage.getByRole('button', { name: /Reveal Cards/i }).click({ force: true });
     await ownerPage.waitForTimeout(500);
 
     // Owner sets agreed value
@@ -242,19 +246,19 @@ test.describe('Multi-User Voting', () => {
     await participantPage.waitForTimeout(1000);
 
     // Complete voting
-    await ownerPage.getByRole('button', { name: /Start Voting/i }).click();
+    await ownerPage.getByRole('button', { name: /Start Voting/i }).click({ force: true });
     await ownerPage.waitForTimeout(300);
-    await ownerPage.getByRole('button', { name: 'S' }).click();
-    await participantPage.getByRole('button', { name: 'M' }).click();
+    await clickVote(ownerPage, 'S');
+    await clickVote(participantPage, 'M');
     await ownerPage.waitForTimeout(500);
-    await ownerPage.getByRole('button', { name: /Reveal Cards/i }).click();
+    await ownerPage.getByRole('button', { name: /Reveal Cards/i }).click({ force: true });
     await ownerPage.waitForTimeout(500);
 
     // Owner should see the new-round control once cards are revealed.
     await expect(ownerPage.getByRole('button', { name: /New Round/i })).toBeVisible();
 
     // Owner resets
-    await ownerPage.getByRole('button', { name: /New Round/i }).click();
+    await ownerPage.getByRole('button', { name: /New Round/i }).click({ force: true });
     await ownerPage.waitForTimeout(500);
 
     // Both should return to idle

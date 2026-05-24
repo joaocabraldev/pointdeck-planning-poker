@@ -43,6 +43,7 @@ test.describe('Room Access and Authentication', () => {
 
     // Create a room to get a valid room ID
     await page.getByRole('button', { name: /Create New Room/i }).click();
+    await expect(page).toHaveURL(/\/rooms\/.+/);
     const roomUrl = page.url();
     const roomId = roomUrl.split('/rooms/')[1];
 
@@ -65,6 +66,7 @@ test.describe('Room Access and Authentication', () => {
     await page.getByPlaceholder('Your name').fill('Reload Test User');
     await page.getByRole('button', { name: /Continue/i }).click();
     await page.getByRole('button', { name: /Create New Room/i }).click();
+    await expect(page).toHaveURL(/\/rooms\/.+/);
 
     const roomUrl = page.url();
 

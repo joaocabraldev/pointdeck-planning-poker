@@ -89,6 +89,7 @@ test.describe('Room Creation and Navigation', () => {
   test('should handle multiple room creations', async ({ page }) => {
     // Create first room
     await page.getByRole('button', { name: /Create New Room/i }).click();
+    await expect(page).toHaveURL(/\/rooms\/.+/);
     const firstRoomUrl = page.url();
 
     // Go back home
@@ -96,6 +97,7 @@ test.describe('Room Creation and Navigation', () => {
 
     // Create second room
     await page.getByRole('button', { name: /Create New Room/i }).click();
+    await expect(page).toHaveURL(/\/rooms\/.+/);
     const secondRoomUrl = page.url();
 
     // URLs should be different
