@@ -17,8 +17,8 @@ test.describe('Authentication Flow', () => {
   test('should show signup form with name input', async ({ page }) => {
     await page.goto(`${BASE_URL}/signup`);
 
-    await expect(page.getByRole('heading', { name: /Join Poker Planning/i })).toBeVisible();
-    await expect(page.getByPlaceholder('Enter your name')).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Poker Planning/i })).toBeVisible();
+    await expect(page.getByPlaceholder('Your name')).toBeVisible();
     await expect(page.getByRole('button', { name: /Continue/i })).toBeVisible();
   });
 
@@ -32,7 +32,7 @@ test.describe('Authentication Flow', () => {
   test('should enable submit button when name is entered', async ({ page }) => {
     await page.goto(`${BASE_URL}/signup`);
 
-    await page.getByPlaceholder('Enter your name').fill('John Doe');
+    await page.getByPlaceholder('Your name').fill('John Doe');
     const submitButton = page.getByRole('button', { name: /Continue/i });
     await expect(submitButton).toBeEnabled();
   });
@@ -40,18 +40,18 @@ test.describe('Authentication Flow', () => {
   test('should successfully sign up and redirect to home', async ({ page }) => {
     await page.goto(`${BASE_URL}/signup`);
 
-    await page.getByPlaceholder('Enter your name').fill('John Doe');
+    await page.getByPlaceholder('Your name').fill('John Doe');
     await page.getByRole('button', { name: /Continue/i }).click();
 
     // Wait for redirect to home page
     await expect(page).toHaveURL(BASE_URL + '/');
-    await expect(page.getByText(/Welcome.*John Doe/i)).toBeVisible();
+    await expect(page.getByText('John Doe')).toBeVisible();
   });
 
   test('should persist session after page reload', async ({ page }) => {
     await page.goto(`${BASE_URL}/signup`);
 
-    await page.getByPlaceholder('Enter your name').fill('Jane Smith');
+    await page.getByPlaceholder('Your name').fill('Jane Smith');
     await page.getByRole('button', { name: /Continue/i }).click();
 
     await expect(page).toHaveURL(BASE_URL + '/');
@@ -61,13 +61,13 @@ test.describe('Authentication Flow', () => {
 
     // Should still be on home page, not redirected to signup
     await expect(page).toHaveURL(BASE_URL + '/');
-    await expect(page.getByText(/Welcome.*Jane Smith/i)).toBeVisible();
+    await expect(page.getByText('Jane Smith')).toBeVisible();
   });
 
   test('should handle signup with whitespace-only name', async ({ page }) => {
     await page.goto(`${BASE_URL}/signup`);
 
-    await page.getByPlaceholder('Enter your name').fill('   ');
+    await page.getByPlaceholder('Your name').fill('   ');
     const submitButton = page.getByRole('button', { name: /Continue/i });
 
     // Button should be disabled for whitespace-only input
@@ -77,7 +77,7 @@ test.describe('Authentication Flow', () => {
   test('should successfully logout and redirect to signup', async ({ page }) => {
     // First sign up
     await page.goto(`${BASE_URL}/signup`);
-    await page.getByPlaceholder('Enter your name').fill('Test User');
+    await page.getByPlaceholder('Your name').fill('Test User');
     await page.getByRole('button', { name: /Continue/i }).click();
 
     await expect(page).toHaveURL(BASE_URL + '/');
@@ -92,7 +92,7 @@ test.describe('Authentication Flow', () => {
   test('should clear session from localStorage on logout', async ({ page }) => {
     // Sign up
     await page.goto(`${BASE_URL}/signup`);
-    await page.getByPlaceholder('Enter your name').fill('Test User');
+    await page.getByPlaceholder('Your name').fill('Test User');
     await page.getByRole('button', { name: /Continue/i }).click();
 
     // Verify session exists in localStorage

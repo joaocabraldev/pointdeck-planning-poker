@@ -26,7 +26,7 @@ test.describe('Room Access and Authentication', () => {
     await expect(page).toHaveURL(`${BASE_URL}/signup`);
 
     // Sign up
-    await page.getByPlaceholder('Enter your name').fill('Test User');
+    await page.getByPlaceholder('Your name').fill('Test User');
     await page.getByRole('button', { name: /Continue/i }).click();
 
     // Should redirect to the intended room
@@ -38,7 +38,7 @@ test.describe('Room Access and Authentication', () => {
     await page.goto(BASE_URL);
     await page.evaluate(() => localStorage.clear());
     await page.goto(`${BASE_URL}/signup`);
-    await page.getByPlaceholder('Enter your name').fill('Authenticated User');
+    await page.getByPlaceholder('Your name').fill('Authenticated User');
     await page.getByRole('button', { name: /Continue/i }).click();
 
     // Create a room to get a valid room ID
@@ -54,7 +54,7 @@ test.describe('Room Access and Authentication', () => {
 
     // Should be on the room page, not redirected
     await expect(page).toHaveURL(`${BASE_URL}/rooms/${roomId}`);
-    await expect(page.getByText(/Poker Planning Room/i)).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Planning Room/i })).toBeVisible();
   });
 
   test('should preserve authentication across page reloads in room', async ({ page }) => {
@@ -62,7 +62,7 @@ test.describe('Room Access and Authentication', () => {
     await page.goto(BASE_URL);
     await page.evaluate(() => localStorage.clear());
     await page.goto(`${BASE_URL}/signup`);
-    await page.getByPlaceholder('Enter your name').fill('Reload Test User');
+    await page.getByPlaceholder('Your name').fill('Reload Test User');
     await page.getByRole('button', { name: /Continue/i }).click();
     await page.getByRole('button', { name: /Create New Room/i }).click();
 
@@ -73,7 +73,7 @@ test.describe('Room Access and Authentication', () => {
 
     // Should still be on the room page
     await expect(page).toHaveURL(roomUrl);
-    await expect(page.getByText(/Poker Planning Room/i)).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Planning Room/i })).toBeVisible();
   });
 });
 

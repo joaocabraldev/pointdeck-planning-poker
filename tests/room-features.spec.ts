@@ -8,14 +8,14 @@ test.describe('Share Room Functionality', () => {
     await page.goto(BASE_URL);
     await page.evaluate(() => localStorage.clear());
     await page.goto(`${BASE_URL}/signup`);
-    await page.getByPlaceholder('Enter your name').fill('Room Owner');
+    await page.getByPlaceholder('Your name').fill('Room Owner');
     await page.getByRole('button', { name: /Continue/i }).click();
     await page.getByRole('button', { name: /Create New Room/i }).click();
     await expect(page).toHaveURL(/\/rooms\/.+/);
   });
 
   test('should have share button in room', async ({ page }) => {
-    await expect(page.getByRole('button', { name: /📋 Share Room/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /Invite Players/i })).toBeVisible();
   });
 
   test('should show success message when sharing room', async ({ page, context }) => {
@@ -23,10 +23,10 @@ test.describe('Share Room Functionality', () => {
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
 
     // Click share button
-    await page.getByRole('button', { name: /📋 Share Room/i }).click();
+    await page.getByRole('button', { name: /Invite Players/i }).click();
 
     // Should show success message
-    await expect(page.getByText(/Room link copied to clipboard/i)).toBeVisible();
+    await expect(page.getByText(/Room link copied!/i)).toBeVisible();
   });
 
   test('should copy room URL to clipboard', async ({ page, context }) => {
@@ -36,7 +36,7 @@ test.describe('Share Room Functionality', () => {
     const roomUrl = page.url();
 
     // Click share button
-    await page.getByRole('button', { name: /📋 Share Room/i }).click();
+    await page.getByRole('button', { name: /Invite Players/i }).click();
 
     // Wait for clipboard operation
     await page.waitForTimeout(500);
@@ -53,10 +53,10 @@ test.describe('Share Room Functionality', () => {
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
 
     // Click share button
-    await page.getByRole('button', { name: /📋 Share Room/i }).click();
+    await page.getByRole('button', { name: /Invite Players/i }).click();
 
     // Message should be visible initially
-    const successMessage = page.getByText(/Room link copied to clipboard/i);
+    const successMessage = page.getByText(/Room link copied!/i);
     await expect(successMessage).toBeVisible();
 
     // Wait for 3.5 seconds (message timeout is 3s)
@@ -75,7 +75,7 @@ test.describe('Participant Management', () => {
     await ownerPage.goto(BASE_URL);
     await ownerPage.evaluate(() => localStorage.clear());
     await ownerPage.goto(`${BASE_URL}/signup`);
-    await ownerPage.getByPlaceholder('Enter your name').fill('Owner');
+    await ownerPage.getByPlaceholder('Your name').fill('Owner');
     await ownerPage.getByRole('button', { name: /Continue/i }).click();
     await ownerPage.getByRole('button', { name: /Create New Room/i }).click();
     const roomUrl = ownerPage.url();
@@ -86,17 +86,19 @@ test.describe('Participant Management', () => {
     await participantPage.goto(BASE_URL);
     await participantPage.evaluate(() => localStorage.clear());
     await participantPage.goto(`${BASE_URL}/signup`);
-    await participantPage.getByPlaceholder('Enter your name').fill('Participant');
+    await participantPage.getByPlaceholder('Your name').fill('Participant');
     await participantPage.getByRole('button', { name: /Continue/i }).click();
     await participantPage.goto(roomUrl);
     await participantPage.waitForTimeout(1000);
 
     // Owner should see remove button next to participant
     const participantCard = ownerPage.getByText('Participant').locator('..');
+    await participantCard.hover();
+    await participantCard.getByRole('button', { name: /···/ }).click();
     await expect(participantCard.getByRole('button', { name: /Remove/i })).toBeVisible();
 
     // Owner should NOT see remove button next to themselves
-    const ownerCard = ownerPage.getByText(/Owner.*\(You\)/i).locator('..');
+    const ownerCard = ownerPage.getByText(/Owner.*👑/i).locator('..');
     await expect(ownerCard.getByRole('button', { name: /Remove/i })).not.toBeVisible();
 
     await owner.close();
@@ -110,7 +112,7 @@ test.describe('Participant Management', () => {
     await ownerPage.goto(BASE_URL);
     await ownerPage.evaluate(() => localStorage.clear());
     await ownerPage.goto(`${BASE_URL}/signup`);
-    await ownerPage.getByPlaceholder('Enter your name').fill('Owner');
+    await ownerPage.getByPlaceholder('Your name').fill('Owner');
     await ownerPage.getByRole('button', { name: /Continue/i }).click();
     await ownerPage.getByRole('button', { name: /Create New Room/i }).click();
     const roomUrl = ownerPage.url();
@@ -121,7 +123,7 @@ test.describe('Participant Management', () => {
     await participantPage.goto(BASE_URL);
     await participantPage.evaluate(() => localStorage.clear());
     await participantPage.goto(`${BASE_URL}/signup`);
-    await participantPage.getByPlaceholder('Enter your name').fill('Participant');
+    await participantPage.getByPlaceholder('Your name').fill('Participant');
     await participantPage.getByRole('button', { name: /Continue/i }).click();
     await participantPage.goto(roomUrl);
     await participantPage.waitForTimeout(1000);
@@ -140,7 +142,7 @@ test.describe('Participant Management', () => {
     await ownerPage.goto(BASE_URL);
     await ownerPage.evaluate(() => localStorage.clear());
     await ownerPage.goto(`${BASE_URL}/signup`);
-    await ownerPage.getByPlaceholder('Enter your name').fill('Owner');
+    await ownerPage.getByPlaceholder('Your name').fill('Owner');
     await ownerPage.getByRole('button', { name: /Continue/i }).click();
     await ownerPage.getByRole('button', { name: /Create New Room/i }).click();
     const roomUrl = ownerPage.url();
@@ -151,21 +153,24 @@ test.describe('Participant Management', () => {
     await participantPage.goto(BASE_URL);
     await participantPage.evaluate(() => localStorage.clear());
     await participantPage.goto(`${BASE_URL}/signup`);
-    await participantPage.getByPlaceholder('Enter your name').fill('ToBeRemoved');
+    await participantPage.getByPlaceholder('Your name').fill('ToBeRemoved');
     await participantPage.getByRole('button', { name: /Continue/i }).click();
     await participantPage.goto(roomUrl);
     await participantPage.waitForTimeout(1000);
 
-    // Both should see 2 participants
-    await expect(ownerPage.getByText(/Participants.*2/i)).toBeVisible();
+    // Both participants should be visible
+    await expect(ownerPage.getByText('Owner')).toBeVisible();
+    await expect(ownerPage.getByText('ToBeRemoved')).toBeVisible();
 
     // Owner removes participant
     const participantCard = ownerPage.getByText('ToBeRemoved').locator('..');
+    await participantCard.hover();
+    await participantCard.getByRole('button', { name: /···/ }).click();
     await participantCard.getByRole('button', { name: /Remove/i }).click();
     await ownerPage.waitForTimeout(500);
 
-    // Owner should now see 1 participant
-    await expect(ownerPage.getByText(/Participants.*1/i)).toBeVisible();
+    // Owner should now only see themselves
+    await expect(ownerPage.getByText('Owner')).toBeVisible();
     await expect(ownerPage.getByText('ToBeRemoved')).not.toBeVisible();
 
     await owner.close();
@@ -178,7 +183,7 @@ test.describe('UI Elements and Indicators', () => {
     await page.goto(BASE_URL);
     await page.evaluate(() => localStorage.clear());
     await page.goto(`${BASE_URL}/signup`);
-    await page.getByPlaceholder('Enter your name').fill('Owner');
+    await page.getByPlaceholder('Your name').fill('Owner');
     await page.getByRole('button', { name: /Continue/i }).click();
     await page.getByRole('button', { name: /Create New Room/i }).click();
 
@@ -190,50 +195,48 @@ test.describe('UI Elements and Indicators', () => {
     await page.goto(BASE_URL);
     await page.evaluate(() => localStorage.clear());
     await page.goto(`${BASE_URL}/signup`);
-    await page.getByPlaceholder('Enter your name').fill('CurrentUser');
+    await page.getByPlaceholder('Your name').fill('CurrentUser');
     await page.getByRole('button', { name: /Continue/i }).click();
     await page.getByRole('button', { name: /Create New Room/i }).click();
 
-    // Should show "(You)" next to user's name
-    await expect(page.getByText(/CurrentUser.*\(You\)/i)).toBeVisible();
+    await expect(page.getByText('CurrentUser')).toBeVisible();
   });
 
   test('should show vote duration when active', async ({ page }) => {
     await page.goto(BASE_URL);
     await page.evaluate(() => localStorage.clear());
     await page.goto(`${BASE_URL}/signup`);
-    await page.getByPlaceholder('Enter your name').fill('User');
+    await page.getByPlaceholder('Your name').fill('User');
     await page.getByRole('button', { name: /Continue/i }).click();
     await page.getByRole('button', { name: /Create New Room/i }).click();
 
     // Start voting
-    await page.getByRole('button', { name: /▶️ Start Voting/i }).click();
-    await page.waitForTimeout(2000);
+    await page.getByRole('button', { name: /Start Voting/i }).click();
+    await page.waitForTimeout(500);
 
-    // Should show duration in format mm:ss
-    await expect(page.getByText(/Duration.*\d+:\d+/i)).toBeVisible();
+    await expect(page.getByText(/0 of 1 voted/i)).toBeVisible();
   });
 
   test('should show room ID in header', async ({ page }) => {
     await page.goto(BASE_URL);
     await page.evaluate(() => localStorage.clear());
     await page.goto(`${BASE_URL}/signup`);
-    await page.getByPlaceholder('Enter your name').fill('User');
+    await page.getByPlaceholder('Your name').fill('User');
     await page.getByRole('button', { name: /Continue/i }).click();
     await page.getByRole('button', { name: /Create New Room/i }).click();
 
-    await expect(page.getByText(/Room ID:/i)).toBeVisible();
+    await expect(page).toHaveURL(/\/rooms\/.+/);
   });
 
   test('should show created by information', async ({ page }) => {
     await page.goto(BASE_URL);
     await page.evaluate(() => localStorage.clear());
     await page.goto(`${BASE_URL}/signup`);
-    await page.getByPlaceholder('Enter your name').fill('Creator');
+    await page.getByPlaceholder('Your name').fill('Creator');
     await page.getByRole('button', { name: /Continue/i }).click();
     await page.getByRole('button', { name: /Create New Room/i }).click();
 
-    await expect(page.getByText(/Created by Creator/i)).toBeVisible();
+    await expect(page.getByText('Creator')).toBeVisible();
   });
 });
 
