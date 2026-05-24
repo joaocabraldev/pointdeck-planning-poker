@@ -94,6 +94,7 @@ test.describe('Authentication Flow', () => {
     await page.goto(`${BASE_URL}/signup`);
     await page.getByPlaceholder('Your name').fill('Test User');
     await page.getByRole('button', { name: /Continue/i }).click();
+    await expect(page).toHaveURL(BASE_URL + '/');
 
     // Verify session exists in localStorage
     const sessionBefore = await page.evaluate(() => localStorage.getItem('session'));
