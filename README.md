@@ -12,8 +12,6 @@ You can use it in https://pointdeck.app
 
 ![Pointdeck app demo](./docs/assets/pointdeck_app_demo.gif)
 
-[Watch the MP4 demo video](./docs/assets/pointdeck_app_demo.mp4)
-
 <img width="1423" height="855" alt="image" src="https://github.com/user-attachments/assets/f6436796-460c-4a0b-ba3a-8bf35eb747ab" />
 
 <img width="1436" height="846" alt="image" src="https://github.com/user-attachments/assets/868a7962-233f-4694-9407-70e685467bf9" />
