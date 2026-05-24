@@ -107,8 +107,8 @@ test.describe('Participant Management', () => {
     // Setup participant
     const { context: participant, page: participantPage } = await createAuthenticatedPage(browser, request, 'Participant');
     await participantPage.goto(roomUrl);
-    await expect(participantPage.getByText('Participant', { exact: true })).toBeVisible();
-    await expect(ownerPage.getByText('Participant', { exact: true })).toBeVisible();
+    await expect(participantPage.getByText('Participant', { exact: true }).first()).toBeVisible();
+    await expect(ownerPage.getByText('Participant', { exact: true }).first()).toBeVisible();
 
     // Owner should see remove button next to participant
     const participantCard = ownerPage.getByText('Participant', { exact: true }).locator('..');
@@ -132,7 +132,7 @@ test.describe('Participant Management', () => {
     // Setup participant
     const { context: participant, page: participantPage } = await createAuthenticatedPage(browser, request, 'Participant');
     await participantPage.goto(roomUrl);
-    await expect(participantPage.getByText('Participant', { exact: true })).toBeVisible();
+    await expect(participantPage.getByText('Participant', { exact: true }).first()).toBeVisible();
 
     // Participant should NOT see any remove buttons
     await expect(participantPage.getByRole('button', { name: /Remove/i })).not.toBeVisible();
@@ -149,8 +149,8 @@ test.describe('Participant Management', () => {
     // Setup participant
     const { context: participant, page: participantPage } = await createAuthenticatedPage(browser, request, 'ToBeRemoved');
     await participantPage.goto(roomUrl);
-    await expect(participantPage.getByText('ToBeRemoved', { exact: true })).toBeVisible();
-    await expect(ownerPage.getByText('ToBeRemoved', { exact: true })).toBeVisible();
+    await expect(participantPage.getByText('ToBeRemoved', { exact: true }).first()).toBeVisible();
+    await expect(ownerPage.getByText('ToBeRemoved', { exact: true }).first()).toBeVisible();
 
     // Both participants should be visible
     await expect(ownerPage.getByText('Owner', { exact: true })).toBeVisible();
