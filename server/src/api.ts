@@ -1,3 +1,4 @@
+import "dotenv/config";
 import express from "express";
 import { createServer } from 'node:http';
 import cors from "cors";
@@ -42,7 +43,7 @@ app.use(roomsRouter);
 
 // Only start the server when not in test mode
 if (process.env.NODE_ENV !== 'test') {
-  const port = process.env.PORT || 3000;
+  const port = Number(process.env.PORT || 3000);
   server.listen(port, () => {
     console.log(`server running at http://localhost:${port}`);
   });
