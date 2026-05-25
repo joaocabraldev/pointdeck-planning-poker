@@ -8,6 +8,7 @@ import roomsRouter from "./rooms.route.js";
 import { JWT_SECRET } from "./auth.middleware.js";
 import { initializeSocket } from "./socket.js";
 import { swaggerSpec } from "./swagger.config.js";
+import { exit } from "node:process";
 
 const app = express();
 const server = createServer(app);
@@ -43,10 +44,16 @@ app.use(roomsRouter);
 
 // Only start the server when not in test mode
 if (process.env.NODE_ENV !== 'test') {
-  const port = Number(process.env.PORT || 3000);
-  server.listen(port, () => {
-    console.log(`server running at http://localhost:${port}`);
-  });
+  const port: Number = Number(process.env.PORT || 3000);
+
+  if (Number.isInteger(port)) {
+    server.listen(port, () => {
+      console.log(`server running at http://localhost:${port}`);
+    });
+  
+  } else {
+    throw new Error("Invalid port number");
+  }
 }
 
 // Export for testing
