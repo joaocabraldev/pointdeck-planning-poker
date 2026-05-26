@@ -1,7 +1,13 @@
 import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import { useSessionStore } from '../../store/sessionStore';
-import { apiClient } from '../../api/client';
+import {
+  apiClient,
+  VOTE_VALUES,
+  VOTING_STATUS_ACTIVE,
+  VOTING_STATUS_CLOSED,
+  VOTING_STATUS_IDLE,
+} from '../../api/client';
 import type { RoomResponse, VoteValue } from '../../api/client';
 import { socketManager } from '../../api/socket';
 
@@ -505,7 +511,7 @@ function Room() {
 
   if (!room) return null;
 
-  const voteOptions: VoteValue[] = ['XS', 'S', 'M', 'L'];
+  const voteOptions = VOTE_VALUES;
 
   return (
     <div className="app-shell">
@@ -591,14 +597,14 @@ function Room() {
           }}
         >
           {/* Vote counter */}
-          {room.votingStatus === 'active' && (
+          {room.votingStatus === VOTING_STATUS_ACTIVE && (
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem' }}>
               {allVotes} of {totalParticipants} voted
             </p>
           )}
 
           {/* Agreed value banner */}
-          {room.votingStatus === 'closed' && room.agreedValue && (
+          {room.votingStatus === VOTING_STATUS_CLOSED && room.agreedValue && (
             <div
               style={{
                 background: 'var(--accent-light)',
@@ -636,7 +642,7 @@ function Room() {
           </div>
 
           {/* Central action buttons */}
-          {isOwner && room.votingStatus === 'idle' && (
+          {isOwner && room.votingStatus === VOTING_STATUS_IDLE && (
             <button
               className="btn-primary"
               onClick={handleStartVoting}
@@ -645,7 +651,7 @@ function Room() {
               Start Voting
             </button>
           )}
-          {isOwner && room.votingStatus === 'active' && (
+          {isOwner && room.votingStatus === VOTING_STATUS_ACTIVE && (
             <button
               className="btn-primary"
               onClick={handleCloseVoting}
@@ -659,7 +665,7 @@ function Room() {
               Reveal Cards
             </button>
           )}
-          {isOwner && room.votingStatus === 'closed' && (
+          {isOwner && room.votingStatus === VOTING_STATUS_CLOSED && (
             <button
               className="btn-primary"
               onClick={handleResetVoting}
@@ -671,7 +677,7 @@ function Room() {
 
           {/* Set agreed value (owner, after reveal) */}
           {isOwner &&
-            room.votingStatus === 'closed' &&
+            room.votingStatus === VOTING_STATUS_CLOSED &&
             room.revealed &&
             !room.agreedValue && (
               <div
@@ -704,7 +710,7 @@ function Room() {
         </div>
 
         {/* ── Bottom Card Picker ── */}
-        {room.votingStatus === 'active' && (
+        {room.votingStatus === VOTING_STATUS_ACTIVE && (
           <div
             style={{
               padding: '1rem 1.5rem 1.25rem',
@@ -737,7 +743,7 @@ function Room() {
         )}
 
         {/* Idle state prompt */}
-        {room.votingStatus === 'idle' && !isOwner && (
+        {room.votingStatus === VOTING_STATUS_IDLE && !isOwner && (
           <div
             style={{
               padding: '1.25rem',

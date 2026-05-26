@@ -2,7 +2,11 @@ import { Router, Response } from 'express';
 import { ulid } from 'ulid';
 import { authenticate, AuthRequest } from './auth.middleware.js';
 import { store } from './store.js';
-import { PokerPlanningRoom, RoomResponse } from './pokerPlanningRoom.model.js';
+import {
+  PokerPlanningRoom,
+  RoomResponse,
+  VOTE_VALUES,
+} from './pokerPlanningRoom.model.js';
 import { emitRoomUpdate } from './socket.js';
 
 const router = Router();
@@ -239,11 +243,12 @@ const submitVote = (req: AuthRequest, res: Response) => {
   }
 
   // Validate vote value
-  const validVotes = ['XS', 'S', 'M', 'L'];
-  if (!vote || !validVotes.includes(vote)) {
+  if (!vote || !VOTE_VALUES.includes(vote)) {
     return res
       .status(400)
-      .json({ error: 'Invalid vote. Must be one of: XS, S, M, L' });
+      .json({
+        error: `Invalid vote. Must be one of: ${VOTE_VALUES.join(', ')}`,
+      });
   }
 
   // Check if user is a participant
@@ -437,11 +442,12 @@ router.post(
     }
 
     // Validate vote value
-    const validVotes = ['XS', 'S', 'M', 'L'];
-    if (!value || !validVotes.includes(value)) {
+    if (!value || !VOTE_VALUES.includes(value)) {
       return res
         .status(400)
-        .json({ error: 'Invalid value. Must be one of: XS, S, M, L' });
+        .json({
+          error: `Invalid value. Must be one of: ${VOTE_VALUES.join(', ')}`,
+        });
     }
 
     // Set agreed value

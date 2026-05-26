@@ -1,6 +1,20 @@
-export type VoteValue = 'XS' | 'S' | 'M' | 'L';
+export const VOTE_VALUES: readonly string[] = (
+  process.env.VOTE_VALUES ?? 'XS,S,M,L'
+)
+  .split(',')
+  .map((v) => v.trim())
+  .filter(Boolean);
 
-export type VotingStatus = 'idle' | 'active' | 'closed';
+export const VOTING_STATUSES: readonly string[] = (
+  process.env.VOTING_STATUSES ?? 'idle,active,closed'
+)
+  .split(',')
+  .map((v) => v.trim())
+  .filter(Boolean);
+
+export type VoteValue = string;
+
+export type VotingStatus = string;
 
 export interface PokerPlanningRoom {
   id: string;

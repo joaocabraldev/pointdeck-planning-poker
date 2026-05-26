@@ -1,7 +1,39 @@
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
-export type VoteValue = 'XS' | 'S' | 'M' | 'L';
-export type VotingStatus = 'idle' | 'active' | 'closed';
+const DEFAULT_VOTE_VALUES = ['XS', 'S', 'M', 'L'] as const;
+const DEFAULT_VOTING_STATUSES = ['idle', 'active', 'closed'] as const;
+
+function parseEnvList(
+  rawValue: string | undefined,
+  fallback: readonly string[],
+): readonly string[] {
+  const values = rawValue
+    ?.split(',')
+    .map((value) => value.trim())
+    .filter(Boolean);
+
+  return values?.length ? values : fallback;
+}
+
+export const VOTE_VALUES: readonly string[] = parseEnvList(
+  import.meta.env.VITE_VOTE_VALUES,
+  DEFAULT_VOTE_VALUES,
+);
+
+export const VOTING_STATUSES: readonly string[] = parseEnvList(
+  import.meta.env.VITE_VOTING_STATUSES,
+  DEFAULT_VOTING_STATUSES,
+);
+
+export const VOTING_STATUS_IDLE =
+  VOTING_STATUSES[0] ?? DEFAULT_VOTING_STATUSES[0];
+export const VOTING_STATUS_ACTIVE =
+  VOTING_STATUSES[1] ?? DEFAULT_VOTING_STATUSES[1];
+export const VOTING_STATUS_CLOSED =
+  VOTING_STATUSES[2] ?? DEFAULT_VOTING_STATUSES[2];
+
+export type VoteValue = string;
+export type VotingStatus = string;
 
 export interface Participant {
   id: string;
