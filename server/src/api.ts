@@ -8,7 +8,6 @@ import roomsRouter from "./rooms.route.js";
 import { JWT_SECRET } from "./auth.middleware.js";
 import { initializeSocket } from "./socket.js";
 import { swaggerSpec } from "./swagger.config.js";
-import { exit } from "node:process";
 
 const app = express();
 const server = createServer(app);
