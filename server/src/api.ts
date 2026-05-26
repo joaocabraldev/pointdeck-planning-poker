@@ -1,13 +1,13 @@
-import "dotenv/config";
-import express from "express";
+import 'dotenv/config';
+import express from 'express';
 import { createServer } from 'node:http';
-import cors from "cors";
-import swaggerUi from "swagger-ui-express";
-import sessionRouter from "./session.route.js";
-import roomsRouter from "./rooms.route.js";
-import { JWT_SECRET } from "./auth.middleware.js";
-import { initializeSocket } from "./socket.js";
-import { swaggerSpec } from "./swagger.config.js";
+import cors from 'cors';
+import swaggerUi from 'swagger-ui-express';
+import sessionRouter from './session.route.js';
+import roomsRouter from './rooms.route.js';
+import { JWT_SECRET } from './auth.middleware.js';
+import { initializeSocket } from './socket.js';
+import { swaggerSpec } from './swagger.config.js';
 
 const app = express();
 const server = createServer(app);
@@ -16,24 +16,28 @@ const server = createServer(app);
 initializeSocket(server);
 
 app.use(express.json());
-app.use(cors({ origin: "*" }));
+app.use(cors({ origin: '*' }));
 
 // Health check endpoint
-app.get("/", (_req, res) => {
+app.get('/', (_req, res) => {
   res.json({
-      health: true
+    health: true,
   });
 });
 
 // Swagger UI
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
-  swaggerOptions: {
-    url: "/api-docs.json"
-  }
-}));
+app.use(
+  '/api-docs',
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerSpec, {
+    swaggerOptions: {
+      url: '/api-docs.json',
+    },
+  }),
+);
 
 // API spec endpoint
-app.get("/api-docs.json", (_req, res) => {
+app.get('/api-docs.json', (_req, res) => {
   res.json(swaggerSpec);
 });
 
@@ -49,9 +53,8 @@ if (process.env.NODE_ENV !== 'test') {
     server.listen(port, () => {
       console.log(`server running at http://localhost:${port}`);
     });
-  
   } else {
-    throw new Error("Invalid port number");
+    throw new Error('Invalid port number');
   }
 }
 

@@ -8,7 +8,8 @@ const options: swaggerJsdoc.Options = {
     info: {
       title: 'Poker Planning API',
       version: '1.0.0',
-      description: 'API documentation for Poker Planning application - a collaborative estimation tool using XS, S, M, L voting cards',
+      description:
+        'API documentation for Poker Planning application - a collaborative estimation tool using XS, S, M, L voting cards',
       contact: {
         name: 'API Support',
       },
@@ -132,18 +133,21 @@ const options: swaggerJsdoc.Options = {
             votingStartedAt: {
               type: 'string',
               format: 'date-time',
-              description: 'Timestamp when voting was started (only present when voting is active or closed)',
+              description:
+                'Timestamp when voting was started (only present when voting is active or closed)',
               example: '2026-02-11T12:05:00.000Z',
             },
             votingClosedAt: {
               type: 'string',
               format: 'date-time',
-              description: 'Timestamp when voting was closed (only present when voting is closed)',
+              description:
+                'Timestamp when voting was closed (only present when voting is closed)',
               example: '2026-02-11T12:10:00.000Z',
             },
             votingDuration: {
               type: 'string',
-              description: 'Duration of voting session in mm:ss format (calculated, only in response)',
+              description:
+                'Duration of voting session in mm:ss format (calculated, only in response)',
               example: '05:30',
             },
             revealed: {
@@ -154,7 +158,8 @@ const options: swaggerJsdoc.Options = {
             agreedValue: {
               type: 'string',
               enum: ['XS', 'S', 'M', 'L'],
-              description: 'The consensus estimate agreed upon by the team (only present after agreement)',
+              description:
+                'The consensus estimate agreed upon by the team (only present after agreement)',
               example: 'M',
             },
           },
@@ -186,7 +191,13 @@ const options: swaggerJsdoc.Options = {
       },
     ],
   },
-  apis: [path.join(path.dirname(fileURLToPath(import.meta.url)), 'openapi', '*.yaml')],
+  apis: [
+    path.join(
+      path.dirname(fileURLToPath(import.meta.url)),
+      'openapi',
+      '*.yaml',
+    ),
+  ],
 };
 
 export const swaggerSpec = swaggerJsdoc(options);

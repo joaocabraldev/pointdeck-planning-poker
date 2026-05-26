@@ -1,6 +1,6 @@
-export type VoteValue = "XS" | "S" | "M" | "L";
+export type VoteValue = 'XS' | 'S' | 'M' | 'L';
 
-export type VotingStatus = "idle" | "active" | "closed";
+export type VotingStatus = 'idle' | 'active' | 'closed';
 
 export interface PokerPlanningRoom {
   id: string;

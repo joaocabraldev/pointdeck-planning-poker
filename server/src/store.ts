@@ -1,5 +1,5 @@
-import { User } from "./user.model.js";
-import { PokerPlanningRoom } from "./pokerPlanningRoom.model.js";
+import { User } from './user.model.js';
+import { PokerPlanningRoom } from './pokerPlanningRoom.model.js';
 
 class Store {
   private users: Map<string, User> = new Map();
@@ -25,7 +25,10 @@ class Store {
     return this.rooms.get(id);
   }
 
-  updateRoom(id: string, updates: Partial<PokerPlanningRoom>): PokerPlanningRoom | undefined {
+  updateRoom(
+    id: string,
+    updates: Partial<PokerPlanningRoom>,
+  ): PokerPlanningRoom | undefined {
     const room = this.rooms.get(id);
     if (!room) return undefined;
 

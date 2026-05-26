@@ -3,7 +3,7 @@ import { Server, Socket } from 'socket.io';
 import jwt from 'jsonwebtoken';
 import { JWT_SECRET } from './auth.middleware.js';
 import { store } from './store.js';
-import {RoomResponse} from "./pokerPlanningRoom.model.js";
+import { RoomResponse } from './pokerPlanningRoom.model.js';
 
 let io: Server;
 
@@ -14,7 +14,7 @@ interface AuthenticatedSocket extends Socket {
 
 export function initializeSocket(server: HttpServer) {
   io = new Server(server, {
-    cors: { origin: "*" },
+    cors: { origin: '*' },
   });
 
   // Middleware to authenticate WebSocket connections
@@ -26,18 +26,22 @@ export function initializeSocket(server: HttpServer) {
     }
 
     try {
-      const decoded = jwt.verify(token, JWT_SECRET) as { id: string; name: string };
+      const decoded = jwt.verify(token, JWT_SECRET) as {
+        id: string;
+        name: string;
+      };
       socket.userId = decoded.id;
       socket.userName = decoded.name;
       next();
-    
     } catch {
       next(new Error('Authentication error: Invalid token'));
     }
   });
 
   io.on('connection', (socket: AuthenticatedSocket) => {
-    console.log(`User connected: ${socket.userName} (${socket.userId}) - Socket: ${socket.id}`);
+    console.log(
+      `User connected: ${socket.userName} (${socket.userId}) - Socket: ${socket.id}`,
+    );
 
     // Handle room subscription
     socket.on('subscribe-room', (roomId: string) => {
@@ -64,18 +68,22 @@ export function initializeSocket(server: HttpServer) {
     });
 
     socket.on('disconnect', () => {
-      console.log(`User disconnected: ${socket.userName} (${socket.userId}) - Socket: ${socket.id}`);
+      console.log(
+        `User disconnected: ${socket.userName} (${socket.userId}) - Socket: ${socket.id}`,
+      );
     });
   });
 
   // Monitor connected clients (only in non-test mode)
   if (process.env.NODE_ENV === 'test') {
     setInterval(() => {
-      io.fetchSockets().then((sockets) => {
-        console.log(`Number of connected clients: ${sockets.length}`);
-      }).catch((err) => {
-        console.error('Error fetching sockets:', err);
-      });
+      io.fetchSockets()
+        .then((sockets) => {
+          console.log(`Number of connected clients: ${sockets.length}`);
+        })
+        .catch((err) => {
+          console.error('Error fetching sockets:', err);
+        });
     }, 30_000);
   }
 
@@ -101,7 +109,7 @@ export function emitRoomUpdate(roomId: string) {
     const user = store.getUser(participantId);
     return {
       id: participantId,
-      name: user?.name || "Unknown"
+      name: user?.name || 'Unknown',
     };
   });
 
@@ -114,7 +122,7 @@ export function emitRoomUpdate(roomId: string) {
     name: room.name,
     created_by: {
       id: room.owner,
-      name: owner?.name || "Unknown"
+      name: owner?.name || 'Unknown',
     },
     createdAt: room.createdAt,
     participants: participantDetails,
@@ -133,7 +141,10 @@ export function emitRoomUpdate(roomId: string) {
 }
 
 // Helper function to calculate voting duration
-function calculateVotingDuration(startedAt: Date, closedAt?: Date): string | undefined {
+function calculateVotingDuration(
+  startedAt: Date,
+  closedAt?: Date,
+): string | undefined {
   if (!startedAt) return undefined;
   const endTime = closedAt || new Date();
   const durationMs = endTime.getTime() - startedAt.getTime();
@@ -142,4 +153,3 @@ function calculateVotingDuration(startedAt: Date, closedAt?: Date): string | und
   const seconds = totalSeconds % 60;
   return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 }
-
