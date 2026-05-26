@@ -1,8 +1,8 @@
-import { useState } from "react";
-import { useSessionStore } from "../../store/sessionStore";
+import { useState } from 'react';
+import { useSessionStore } from '../../store/sessionStore';
 
 function Signup() {
-  const [name, setName] = useState("");
+  const [name, setName] = useState('');
   const signup = useSessionStore((s) => s.signup);
   const isLoading = useSessionStore((s) => s.isLoading);
   const error = useSessionStore((s) => s.error);
@@ -22,17 +22,19 @@ function Signup() {
     <div className="app-shell">
       <div className="page-card">
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <div style={{
-            width: '3.5rem',
-            height: '3.5rem',
-            background: 'var(--accent)',
-            borderRadius: 'var(--radius-lg)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            margin: '0 auto 1rem',
-            fontSize: '1.5rem',
-          }}>
+          <div
+            style={{
+              width: '3.5rem',
+              height: '3.5rem',
+              background: 'var(--accent)',
+              borderRadius: 'var(--radius-lg)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 1rem',
+              fontSize: '1.5rem',
+            }}
+          >
             <span style={{ color: 'white' }}>&#9830;</span>
           </div>
           <h1>Poker Planning</h1>
@@ -41,7 +43,10 @@ function Signup() {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        <form
+          onSubmit={handleSubmit}
+          style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}
+        >
           <input
             type="text"
             placeholder="Your name"

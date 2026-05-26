@@ -1,70 +1,93 @@
-import { useEffect, useState, useRef } from "react";
-import { useParams, useNavigate } from "react-router";
-import { useSessionStore } from "../../store/sessionStore";
-import { apiClient } from "../../api/client";
-import type { RoomResponse, VoteValue } from "../../api/client";
-import { socketManager } from "../../api/socket";
+import { useEffect, useState, useRef } from 'react';
+import { useParams, useNavigate } from 'react-router';
+import { useSessionStore } from '../../store/sessionStore';
+import { apiClient } from '../../api/client';
+import type { RoomResponse, VoteValue } from '../../api/client';
+import { socketManager } from '../../api/socket';
 
-const AVATAR_COLORS = ['#4f6ef7', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#06b6d4'];
+const AVATAR_COLORS = [
+  '#4f6ef7',
+  '#8b5cf6',
+  '#ec4899',
+  '#f59e0b',
+  '#10b981',
+  '#06b6d4',
+];
 
 function getAvatarColor(name: string) {
   let hash = 0;
-  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  for (let i = 0; i < name.length; i++)
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
   return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
 }
 
 /* ── Card back pattern (SVG inline) ── */
 function CardBack() {
   return (
-    <div style={{
-      width: '3.5rem',
-      height: '5rem',
-      borderRadius: 'var(--radius-md)',
-      border: '2px dashed #d4a0b9',
-      background: 'linear-gradient(135deg, #f0c4d8 25%, #e8b0cc 25%, #e8b0cc 50%, #f0c4d8 50%, #f0c4d8 75%, #e8b0cc 75%)',
-      backgroundSize: '8px 8px',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-    }} />
+    <div
+      style={{
+        width: '3.5rem',
+        height: '5rem',
+        borderRadius: 'var(--radius-md)',
+        border: '2px dashed #d4a0b9',
+        background:
+          'linear-gradient(135deg, #f0c4d8 25%, #e8b0cc 25%, #e8b0cc 50%, #f0c4d8 50%, #f0c4d8 75%, #e8b0cc 75%)',
+        backgroundSize: '8px 8px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    />
   );
 }
 
 function CardEmpty() {
   return (
-    <div style={{
-      width: '3.5rem',
-      height: '5rem',
-      borderRadius: 'var(--radius-md)',
-      background: '#e5e7eb',
-      border: '2px solid #d1d5db',
-    }} />
+    <div
+      style={{
+        width: '3.5rem',
+        height: '5rem',
+        borderRadius: 'var(--radius-md)',
+        background: '#e5e7eb',
+        border: '2px solid #d1d5db',
+      }}
+    />
   );
 }
 
 function CardRevealed({ value }: { value: string }) {
   return (
-    <div style={{
-      width: '3.5rem',
-      height: '5rem',
-      borderRadius: 'var(--radius-md)',
-      background: 'white',
-      border: '2px solid var(--accent)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      fontWeight: 700,
-      fontSize: '1.25rem',
-      color: 'var(--accent)',
-      boxShadow: 'var(--shadow-sm)',
-    }}>
+    <div
+      style={{
+        width: '3.5rem',
+        height: '5rem',
+        borderRadius: 'var(--radius-md)',
+        background: 'white',
+        border: '2px solid var(--accent)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontWeight: 700,
+        fontSize: '1.25rem',
+        color: 'var(--accent)',
+        boxShadow: 'var(--shadow-sm)',
+      }}
+    >
       {value}
     </div>
   );
 }
 
 /* ── Vote option card ── */
-function VoteCard({ value, selected, onClick }: { value: string; selected: boolean; onClick: () => void }) {
+function VoteCard({
+  value,
+  selected,
+  onClick,
+}: {
+  value: string;
+  selected: boolean;
+  onClick: () => void;
+}) {
   return (
     <button
       onClick={onClick}
@@ -72,7 +95,9 @@ function VoteCard({ value, selected, onClick }: { value: string; selected: boole
         width: '3.5rem',
         height: '5rem',
         borderRadius: 'var(--radius-md)',
-        border: selected ? '2.5px solid var(--accent)' : '1.5px solid var(--border)',
+        border: selected
+          ? '2.5px solid var(--accent)'
+          : '1.5px solid var(--border)',
         background: selected ? 'var(--accent)' : 'white',
         color: selected ? 'white' : 'var(--text-primary)',
         fontWeight: 700,
@@ -80,7 +105,9 @@ function VoteCard({ value, selected, onClick }: { value: string; selected: boole
         cursor: 'pointer',
         transition: 'all 0.2s ease',
         transform: selected ? 'translateY(-8px)' : 'translateY(0)',
-        boxShadow: selected ? '0 8px 20px rgba(79, 110, 247, 0.3)' : 'var(--shadow-sm)',
+        boxShadow: selected
+          ? '0 8px 20px rgba(79, 110, 247, 0.3)'
+          : 'var(--shadow-sm)',
         padding: 0,
         display: 'flex',
         alignItems: 'center',
@@ -93,14 +120,23 @@ function VoteCard({ value, selected, onClick }: { value: string; selected: boole
 }
 
 /* ── Dots menu for participant actions ── */
-function ParticipantMenu({ visible, onMakeOwner, onRemove }: { visible: boolean; onMakeOwner: () => void; onRemove: () => void }) {
+function ParticipantMenu({
+  visible,
+  onMakeOwner,
+  onRemove,
+}: {
+  visible: boolean;
+  onMakeOwner: () => void;
+  onRemove: () => void;
+}) {
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!open) return;
     const handleClick = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setOpen(false);
+      if (menuRef.current && !menuRef.current.contains(e.target as Node))
+        setOpen(false);
     };
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
@@ -134,21 +170,26 @@ function ParticipantMenu({ visible, onMakeOwner, onRemove }: { visible: boolean;
         ···
       </button>
       {open && (
-        <div style={{
-          position: 'absolute',
-          top: '100%',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          background: 'white',
-          border: '1px solid var(--border)',
-          borderRadius: 'var(--radius-md)',
-          boxShadow: 'var(--shadow-md)',
-          zIndex: 10,
-          minWidth: '7.5rem',
-          overflow: 'hidden',
-        }}>
+        <div
+          style={{
+            position: 'absolute',
+            top: '100%',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            background: 'white',
+            border: '1px solid var(--border)',
+            borderRadius: 'var(--radius-md)',
+            boxShadow: 'var(--shadow-md)',
+            zIndex: 10,
+            minWidth: '7.5rem',
+            overflow: 'hidden',
+          }}
+        >
           <button
-            onClick={() => { onMakeOwner(); setOpen(false); }}
+            onClick={() => {
+              onMakeOwner();
+              setOpen(false);
+            }}
             style={{
               display: 'block',
               width: '100%',
@@ -160,13 +201,18 @@ function ParticipantMenu({ visible, onMakeOwner, onRemove }: { visible: boolean;
               textAlign: 'left',
               color: 'var(--text-primary)',
             }}
-            onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-hover, #f3f4f6)')}
-            onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+            onMouseEnter={(e) =>
+              (e.currentTarget.style.background = 'var(--bg-hover, #f3f4f6)')
+            }
+            onMouseLeave={(e) => (e.currentTarget.style.background = 'none')}
           >
             Make Owner
           </button>
           <button
-            onClick={() => { onRemove(); setOpen(false); }}
+            onClick={() => {
+              onRemove();
+              setOpen(false);
+            }}
             style={{
               display: 'block',
               width: '100%',
@@ -178,8 +224,10 @@ function ParticipantMenu({ visible, onMakeOwner, onRemove }: { visible: boolean;
               textAlign: 'left',
               color: '#ef4444',
             }}
-            onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-hover, #f3f4f6)')}
-            onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+            onMouseEnter={(e) =>
+              (e.currentTarget.style.background = 'var(--bg-hover, #f3f4f6)')
+            }
+            onMouseLeave={(e) => (e.currentTarget.style.background = 'none')}
           >
             Remove
           </button>
@@ -190,7 +238,14 @@ function ParticipantMenu({ visible, onMakeOwner, onRemove }: { visible: boolean;
 }
 
 /* ── Participant card with hover-triggered menu ── */
-function ParticipantCard({ participant, room, currentUserId, isOwner, onTransferOwnership, onRemoveParticipant }: {
+function ParticipantCard({
+  participant,
+  room,
+  currentUserId,
+  isOwner,
+  onTransferOwnership,
+  onRemoveParticipant,
+}: {
   participant: { id: string; name: string };
   room: RoomResponse;
   currentUserId: string;
@@ -240,16 +295,18 @@ function ParticipantCard({ participant, room, currentUserId, isOwner, onTransfer
       >
         {pInitial}
       </div>
-      <span style={{
-        fontSize: '0.8rem',
-        fontWeight: isMe ? 600 : 400,
-        color: 'var(--text-primary)',
-        maxWidth: '5rem',
-        overflow: 'hidden',
-        textOverflow: 'ellipsis',
-        whiteSpace: 'nowrap',
-        textAlign: 'center',
-      }}>
+      <span
+        style={{
+          fontSize: '0.8rem',
+          fontWeight: isMe ? 600 : 400,
+          color: 'var(--text-primary)',
+          maxWidth: '5rem',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+          textAlign: 'center',
+        }}
+      >
         {participant.name}
         {isRoomOwner && ' \u{1F451}'}
       </span>
@@ -296,7 +353,8 @@ function Room() {
         setLastRoom(roomId);
         setError(null);
       } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Failed to load room';
+        const errorMessage =
+          err instanceof Error ? err.message : 'Failed to load room';
         setError(errorMessage);
       } finally {
         setIsLoading(false);
@@ -369,7 +427,9 @@ function Room() {
       await apiClient.setAgreedValue(roomId, value);
       setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to set agreed value');
+      setError(
+        err instanceof Error ? err.message : 'Failed to set agreed value',
+      );
     }
   };
 
@@ -379,7 +439,9 @@ function Room() {
       await apiClient.removeParticipant(roomId, participantId);
       setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to remove participant');
+      setError(
+        err instanceof Error ? err.message : 'Failed to remove participant',
+      );
     }
   };
 
@@ -389,27 +451,37 @@ function Room() {
       await apiClient.transferOwnership(roomId, participantId);
       setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to transfer ownership');
+      setError(
+        err instanceof Error ? err.message : 'Failed to transfer ownership',
+      );
     }
   };
 
   const handleShareRoom = () => {
     const url = window.location.href;
-    navigator.clipboard.writeText(url).then(() => {
-      setShareMessage('Room link copied!');
-      setTimeout(() => setShareMessage(null), 3000);
-    }).catch(() => {
-      const roomPath = window.location.pathname;
-      setShareMessage(`Sorry, it wasn't possible to copy.\nShare this link: https://pointdeck.app${roomPath}`);
-      setTimeout(() => setShareMessage(null), 5000);
-    });
+    navigator.clipboard
+      .writeText(url)
+      .then(() => {
+        setShareMessage('Room link copied!');
+        setTimeout(() => setShareMessage(null), 3000);
+      })
+      .catch(() => {
+        const roomPath = window.location.pathname;
+        setShareMessage(
+          `Sorry, it wasn't possible to copy.\nShare this link: https://pointdeck.app${roomPath}`,
+        );
+        setTimeout(() => setShareMessage(null), 5000);
+      });
   };
 
   /* ── Loading / Error ── */
   if (isLoading) {
     return (
       <div className="app-shell">
-        <div className="room-card" style={{ alignItems: 'center', justifyContent: 'center' }}>
+        <div
+          className="room-card"
+          style={{ alignItems: 'center', justifyContent: 'center' }}
+        >
           <p style={{ color: 'var(--text-secondary)' }}>Loading room...</p>
         </div>
       </div>
@@ -420,8 +492,12 @@ function Room() {
     return (
       <div className="app-shell">
         <div className="page-card" style={{ textAlign: 'center' }}>
-          <p className="toast toast-error" style={{ marginBottom: '1rem' }}>{error}</p>
-          <button className="btn-primary" onClick={() => navigate('/')}>Back to Home</button>
+          <p className="toast toast-error" style={{ marginBottom: '1rem' }}>
+            {error}
+          </p>
+          <button className="btn-primary" onClick={() => navigate('/')}>
+            Back to Home
+          </button>
         </div>
       </div>
     );
@@ -434,35 +510,51 @@ function Room() {
   return (
     <div className="app-shell">
       <div className="room-card">
-
         {/* ── Top Bar ── */}
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          padding: '1rem 1.5rem',
-          borderBottom: '1px solid var(--border-light)',
-        }}>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            padding: '1rem 1.5rem',
+            borderBottom: '1px solid var(--border-light)',
+          }}
+        >
           {/* Left: room name */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span style={{ color: 'var(--accent)', fontSize: '1.25rem' }}>&#9830;</span>
+            <span style={{ color: 'var(--accent)', fontSize: '1.25rem' }}>
+              &#9830;
+            </span>
             <h2 style={{ margin: 0 }}>{room.name || 'Planning Room'}</h2>
           </div>
 
           {/* Right: actions */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <button className="btn-outline" onClick={handleShareRoom}>+ Invite Players</button>
-            <button className="btn-ghost" onClick={() => navigate('/')}>Home</button>
+            <button className="btn-outline" onClick={handleShareRoom}>
+              + Invite Players
+            </button>
+            <button className="btn-ghost" onClick={() => navigate('/')}>
+              Home
+            </button>
 
             {/* User avatar */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginLeft: '0.5rem' }}>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                marginLeft: '0.5rem',
+              }}
+            >
               <div
                 className="avatar"
                 style={{ background: getAvatarColor(userName) }}
               >
                 {initial}
               </div>
-              <span style={{ fontSize: '0.875rem', fontWeight: 500 }}>{userName}</span>
+              <span style={{ fontSize: '0.875rem', fontWeight: 500 }}>
+                {userName}
+              </span>
             </div>
           </div>
         </div>
@@ -470,26 +562,34 @@ function Room() {
         {/* ── Toasts ── */}
         {(shareMessage || error) && (
           <div style={{ padding: '0.75rem 1.5rem 0' }}>
-            {shareMessage && <p className="toast toast-success" style={{ whiteSpace: 'pre-line' }}>{shareMessage}</p>}
+            {shareMessage && (
+              <p
+                className="toast toast-success"
+                style={{ whiteSpace: 'pre-line' }}
+              >
+                {shareMessage}
+              </p>
+            )}
             {error && <p className="toast toast-error">{error}</p>}
           </div>
         )}
 
         {/* ── Table Area ── */}
-        <div style={{
-          flex: 1,
-          background: 'var(--bg-table)',
-          margin: '1rem',
-          borderRadius: 'var(--radius-lg)',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '2rem',
-          gap: '1.5rem',
-          minHeight: '350px',
-        }}>
-
+        <div
+          style={{
+            flex: 1,
+            background: 'var(--bg-table)',
+            margin: '1rem',
+            borderRadius: 'var(--radius-lg)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '2rem',
+            gap: '1.5rem',
+            minHeight: '350px',
+          }}
+        >
           {/* Vote counter */}
           {room.votingStatus === 'active' && (
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem' }}>
@@ -499,25 +599,29 @@ function Room() {
 
           {/* Agreed value banner */}
           {room.votingStatus === 'closed' && room.agreedValue && (
-            <div style={{
-              background: 'var(--accent-light)',
-              color: 'var(--accent)',
-              padding: '0.5rem 1.25rem',
-              borderRadius: 'var(--radius-full)',
-              fontWeight: 600,
-              fontSize: '0.95rem',
-            }}>
+            <div
+              style={{
+                background: 'var(--accent-light)',
+                color: 'var(--accent)',
+                padding: '0.5rem 1.25rem',
+                borderRadius: 'var(--radius-full)',
+                fontWeight: 600,
+                fontSize: '0.95rem',
+              }}
+            >
               Agreed: {room.agreedValue}
             </div>
           )}
 
           {/* Participants around the table */}
-          <div style={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            justifyContent: 'center',
-            gap: '2rem',
-          }}>
+          <div
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              justifyContent: 'center',
+              gap: '2rem',
+            }}
+          >
             {room.participants.map((participant) => (
               <ParticipantCard
                 key={participant.id}
@@ -533,21 +637,32 @@ function Room() {
 
           {/* Central action buttons */}
           {isOwner && room.votingStatus === 'idle' && (
-            <button className="btn-primary" onClick={handleStartVoting}
+            <button
+              className="btn-primary"
+              onClick={handleStartVoting}
               style={{ padding: '0.75rem 2rem', fontSize: '0.95rem' }}
             >
               Start Voting
             </button>
           )}
           {isOwner && room.votingStatus === 'active' && (
-            <button className="btn-primary" onClick={handleCloseVoting}
-              style={{ padding: '0.75rem 2rem', fontSize: '0.95rem', background: '#e8a854', boxShadow: 'none' }}
+            <button
+              className="btn-primary"
+              onClick={handleCloseVoting}
+              style={{
+                padding: '0.75rem 2rem',
+                fontSize: '0.95rem',
+                background: '#e8a854',
+                boxShadow: 'none',
+              }}
             >
               Reveal Cards
             </button>
           )}
           {isOwner && room.votingStatus === 'closed' && (
-            <button className="btn-primary" onClick={handleResetVoting}
+            <button
+              className="btn-primary"
+              onClick={handleResetVoting}
               style={{ padding: '0.75rem 2rem', fontSize: '0.95rem' }}
             >
               New Round
@@ -555,43 +670,59 @@ function Room() {
           )}
 
           {/* Set agreed value (owner, after reveal) */}
-          {isOwner && room.votingStatus === 'closed' && room.revealed && !room.agreedValue && (
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.75rem',
-            }}>
-              <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Set agreed value:</span>
-              {voteOptions.map((option) => (
-                <button
-                  key={option}
-                  className="btn-outline"
-                  onClick={() => handleSetAgreedValue(option)}
-                  style={{ padding: '0.375rem 0.75rem', fontWeight: 600 }}
+          {isOwner &&
+            room.votingStatus === 'closed' &&
+            room.revealed &&
+            !room.agreedValue && (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.75rem',
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: '0.875rem',
+                    color: 'var(--text-secondary)',
+                  }}
                 >
-                  {option}
-                </button>
-              ))}
-            </div>
-          )}
+                  Set agreed value:
+                </span>
+                {voteOptions.map((option) => (
+                  <button
+                    key={option}
+                    className="btn-outline"
+                    onClick={() => handleSetAgreedValue(option)}
+                    style={{ padding: '0.375rem 0.75rem', fontWeight: 600 }}
+                  >
+                    {option}
+                  </button>
+                ))}
+              </div>
+            )}
         </div>
 
         {/* ── Bottom Card Picker ── */}
         {room.votingStatus === 'active' && (
-          <div style={{
-            padding: '1rem 1.5rem 1.25rem',
-            borderTop: '1px solid var(--border-light)',
-            display: 'flex',
-            alignItems: 'flex-end',
-            justifyContent: 'center',
-            gap: '0.75rem',
-          }}>
-            <span style={{
-              fontSize: '0.875rem',
-              color: 'var(--text-muted)',
-              marginRight: '0.5rem',
-              paddingBottom: '1.5rem',
-            }}>
+          <div
+            style={{
+              padding: '1rem 1.5rem 1.25rem',
+              borderTop: '1px solid var(--border-light)',
+              display: 'flex',
+              alignItems: 'flex-end',
+              justifyContent: 'center',
+              gap: '0.75rem',
+            }}
+          >
+            <span
+              style={{
+                fontSize: '0.875rem',
+                color: 'var(--text-muted)',
+                marginRight: '0.5rem',
+                paddingBottom: '1.5rem',
+              }}
+            >
               Pick your card
             </span>
             {voteOptions.map((option) => (
@@ -607,16 +738,17 @@ function Room() {
 
         {/* Idle state prompt */}
         {room.votingStatus === 'idle' && !isOwner && (
-          <div style={{
-            padding: '1.25rem',
-            textAlign: 'center',
-            color: 'var(--text-muted)',
-            fontSize: '0.9rem',
-          }}>
+          <div
+            style={{
+              padding: '1.25rem',
+              textAlign: 'center',
+              color: 'var(--text-muted)',
+              fontSize: '0.9rem',
+            }}
+          >
             Waiting for the host to start voting...
           </div>
         )}
-
       </div>
     </div>
   );

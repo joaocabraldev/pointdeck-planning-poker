@@ -1,10 +1,10 @@
-import { useEffect } from "react";
-import { Routes, Route, Navigate, useLocation } from "react-router";
-import "./App.css";
-import { useSessionStore } from "../store/sessionStore";
-import Signup from "./pages/Signup";
-import Welcome from "./pages/Welcome";
-import Room from "./pages/Room";
+import { useEffect } from 'react';
+import { Routes, Route, Navigate, useLocation } from 'react-router';
+import './App.css';
+import { useSessionStore } from '../store/sessionStore';
+import Signup from './pages/Signup';
+import Welcome from './pages/Welcome';
+import Room from './pages/Room';
 
 function App() {
   const session = useSessionStore((s) => s.session);
@@ -26,17 +26,21 @@ function App() {
       />
       <Route
         path="/signup"
-        element={
-          session ? (
-            <Navigate to={from || "/"} replace />
-          ) : (
-            <Signup />
-          )
-        }
+        element={session ? <Navigate to={from || '/'} replace /> : <Signup />}
       />
       <Route
         path="/rooms/:roomId"
-        element={session ? <Room /> : <Navigate to="/signup" state={{ from: location.pathname }} replace />}
+        element={
+          session ? (
+            <Room />
+          ) : (
+            <Navigate
+              to="/signup"
+              state={{ from: location.pathname }}
+              replace
+            />
+          )
+        }
       />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

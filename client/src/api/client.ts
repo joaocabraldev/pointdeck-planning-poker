@@ -1,7 +1,7 @@
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
-export type VoteValue = "XS" | "S" | "M" | "L";
-export type VotingStatus = "idle" | "active" | "closed";
+export type VoteValue = 'XS' | 'S' | 'M' | 'L';
+export type VotingStatus = 'idle' | 'active' | 'closed';
 
 export interface Participant {
   id: string;
@@ -69,13 +69,18 @@ class ApiClient {
     });
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ error: 'Request failed' }));
+      const error = await response
+        .json()
+        .catch(() => ({ error: 'Request failed' }));
       throw new Error(error.error || 'Request failed');
     }
 
     // Some endpoints return no content
     const contentLength = response.headers.get('content-length');
-    if (response.status === 200 && (contentLength === '0' || contentLength === null)) {
+    if (
+      response.status === 200 &&
+      (contentLength === '0' || contentLength === null)
+    ) {
       return null;
     }
 
@@ -106,8 +111,14 @@ class ApiClient {
     return this.request('POST', `/rooms/${roomId}/join`);
   }
 
-  async removeParticipant(roomId: string, participantId: string): Promise<void> {
-    return this.request('DELETE', `/rooms/${roomId}/participants/${participantId}`);
+  async removeParticipant(
+    roomId: string,
+    participantId: string,
+  ): Promise<void> {
+    return this.request(
+      'DELETE',
+      `/rooms/${roomId}/participants/${participantId}`,
+    );
   }
 
   async transferOwnership(roomId: string, userId: string): Promise<void> {
@@ -141,4 +152,3 @@ class ApiClient {
 }
 
 export const apiClient = new ApiClient();
-

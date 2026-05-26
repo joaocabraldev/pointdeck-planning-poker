@@ -1,13 +1,21 @@
-import { useState } from "react";
-import { useNavigate } from "react-router";
-import { useSessionStore } from "../../store/sessionStore";
-import { apiClient } from "../../api/client";
+import { useState } from 'react';
+import { useNavigate } from 'react-router';
+import { useSessionStore } from '../../store/sessionStore';
+import { apiClient } from '../../api/client';
 
-const AVATAR_COLORS = ['#4f6ef7', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#06b6d4'];
+const AVATAR_COLORS = [
+  '#4f6ef7',
+  '#8b5cf6',
+  '#ec4899',
+  '#f59e0b',
+  '#10b981',
+  '#06b6d4',
+];
 
 function getAvatarColor(name: string) {
   let hash = 0;
-  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  for (let i = 0; i < name.length; i++)
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
   return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
 }
 
@@ -29,7 +37,8 @@ function Welcome() {
       const response = await apiClient.createRoom();
       navigate(`/rooms/${response.room_id}`);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to create room';
+      const errorMessage =
+        err instanceof Error ? err.message : 'Failed to create room';
       setError(errorMessage);
       setIsCreating(false);
     }
@@ -39,13 +48,17 @@ function Welcome() {
     <div className="app-shell">
       <div className="page-card" style={{ maxWidth: '520px' }}>
         {/* Header */}
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: '2.5rem',
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: '2.5rem',
+          }}
+        >
+          <div
+            style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}
+          >
             <div
               className="avatar"
               style={{
@@ -59,25 +72,31 @@ function Welcome() {
             </div>
             <div>
               <div style={{ fontWeight: 600 }}>{userName}</div>
-              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Online</div>
+              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                Online
+              </div>
             </div>
           </div>
-          <button className="btn-ghost" onClick={logout}>Logout</button>
+          <button className="btn-ghost" onClick={logout}>
+            Logout
+          </button>
         </div>
 
         {/* Content */}
         <div style={{ textAlign: 'center' }}>
-          <div style={{
-            width: '4rem',
-            height: '4rem',
-            background: 'var(--accent-light)',
-            borderRadius: 'var(--radius-lg)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            margin: '0 auto 1.25rem',
-            fontSize: '1.75rem',
-          }}>
+          <div
+            style={{
+              width: '4rem',
+              height: '4rem',
+              background: 'var(--accent-light)',
+              borderRadius: 'var(--radius-lg)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 1.25rem',
+              fontSize: '1.75rem',
+            }}
+          >
             <span style={{ color: 'var(--accent)' }}>&#9830;</span>
           </div>
           <h1 style={{ marginBottom: '0.5rem' }}>Planning Poker</h1>
@@ -85,7 +104,14 @@ function Welcome() {
             Create a room and invite your team to start estimating
           </p>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', alignItems: 'center' }}>
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.75rem',
+              alignItems: 'center',
+            }}
+          >
             <button
               className="btn-primary"
               onClick={handleCreateRoom}
@@ -106,7 +132,11 @@ function Welcome() {
             )}
           </div>
 
-          {error && <p className="toast toast-error" style={{ marginTop: '1rem' }}>{error}</p>}
+          {error && (
+            <p className="toast toast-error" style={{ marginTop: '1rem' }}>
+              {error}
+            </p>
+          )}
         </div>
       </div>
     </div>
