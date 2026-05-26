@@ -1,6 +1,6 @@
 # Poker Planning Client
 
-Frontend application for collaborative poker planning sessions using T-shirt sizing (XS, S, M, L).
+Frontend application for collaborative poker planning sessions using T-shirt sizing (XS, S, M, L) or your own custom options.
 
 ## Features
 
@@ -32,9 +32,14 @@ Create a `.env` file in the client directory (optional):
 
 ```env
 VITE_API_URL=http://localhost:3000
+VITE_VOTE_VALUES=XS,S,M,L
+VITE_VOTING_STATUSES=idle,active,closed
 ```
 
-If not specified, the client will default to `http://localhost:3000`.
+**Environment Variables:**
+- `VITE_API_URL` - Backend API URL (default: `http://localhost:3000`)
+- `VITE_VOTE_VALUES` - Comma-separated list of voting options (default: `XS,S,M,L`)
+- `VITE_VOTING_STATUSES` - Comma-separated list of voting states (default: `idle,active,closed`)
 
 ### Development
 
@@ -90,7 +95,7 @@ npm run preview
 
 **As Participant:**
 1. Wait for the owner to start voting
-2. Select your vote: XS, S, M, or L
+2. Select your vote from the available options (default: XS, S, M, L)
 3. You can change your vote before the owner closes voting
 4. Click "❌ Cancel My Vote" to remove your vote
 
@@ -138,6 +143,35 @@ The client integrates with the Poker Planning API. See `/server/docs/API_OVERVIE
 ### Environment Variables
 
 - `VITE_API_URL` - Backend API URL (default: `http://localhost:3000`)
+- `VITE_VOTE_VALUES` - Comma-separated list of voting options (default: `XS,S,M,L`)
+- `VITE_VOTING_STATUSES` - Comma-separated list of voting state names (default: `idle,active,closed`)
+
+## Customization
+
+### Custom Voting Options
+
+You can customize the voting cards by setting `VITE_VOTE_VALUES` in your `.env` file:
+
+```env
+VITE_VOTE_VALUES=1,2,3,5,8,13,21
+```
+
+This will display Fibonacci numbers instead of T-shirt sizes. The voting pool will dynamically update across the application.
+
+### Custom Voting States
+
+You can customize the voting state names by setting `VITE_VOTING_STATUSES` in your `.env` file:
+
+```env
+VITE_VOTING_STATUSES=waiting,voting,closed
+```
+
+**Note:** The order matters:
+1. First state = initial/idle state (waiting for owner to start)
+2. Second state = active voting state
+3. Third state = closed/revealed state
+
+Make sure your backend is also configured with matching values (see `../server` documentation).
 
 ## Troubleshooting
 
