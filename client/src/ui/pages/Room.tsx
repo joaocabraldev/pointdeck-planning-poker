@@ -318,7 +318,7 @@ function Room() {
       socketManager.offRoomUpdate(handleRoomUpdate);
       socketManager.unsubscribeFromRoom(roomId);
     };
-  }, [roomId, session?.token]);
+  }, [roomId, session?.token, setLastRoom]);
 
   const handleVote = async (vote: VoteValue) => {
     if (!roomId) return;

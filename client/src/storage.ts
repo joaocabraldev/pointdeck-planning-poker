@@ -1,5 +1,5 @@
 class storage {
-    static setItem = (key: string, value: any) => 
+    static setItem = (key: string, value: unknown) => 
         localStorage.setItem(key, JSON.stringify(value));
 
     static getItem = <T>(key: string): T | null => {
