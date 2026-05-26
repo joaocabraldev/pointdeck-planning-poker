@@ -145,7 +145,6 @@ describe("API Tests", () => {
         .send({ name: "Another User" });
 
       const authToken2 = session2.body.token;
-      const userId2 = session2.body.user.id;
 
       const room1 = await request(app)
         .post("/rooms")

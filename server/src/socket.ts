@@ -30,7 +30,8 @@ export function initializeSocket(server: HttpServer) {
       socket.userId = decoded.id;
       socket.userName = decoded.name;
       next();
-    } catch (error) {
+    
+    } catch {
       next(new Error('Authentication error: Invalid token'));
     }
   });

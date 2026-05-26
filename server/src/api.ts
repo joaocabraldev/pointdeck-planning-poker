@@ -43,7 +43,7 @@ app.use(roomsRouter);
 
 // Only start the server when not in test mode
 if (process.env.NODE_ENV !== 'test') {
-  const port: Number = Number(process.env.PORT || 3000);
+  const port: number = Number(process.env.PORT || 3000);
 
   if (Number.isInteger(port)) {
     server.listen(port, () => {

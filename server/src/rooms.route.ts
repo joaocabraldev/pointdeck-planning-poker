@@ -42,7 +42,7 @@ function calculateVotingDuration(startedAt: Date, closedAt?: Date): string | und
 }
 
 // Helper function to get room response
-function getRoomResponse(room: PokerPlanningRoom, store: any) {
+function getRoomResponse(room: PokerPlanningRoom, store: { getUser: (id: string) => { name: string } | undefined }): RoomResponse {
   const owner = store.getUser(room.owner);
   const participantDetails = room.participants.map((participantId: string) => {
     const user = store.getUser(participantId);
@@ -78,7 +78,8 @@ router.post("/rooms/:id/join", authenticate, (req: AuthRequest, res: Response) =
   const id = req.params.id as string;
   const userId = req.user!.id;
 
-  let room = store.getRoom(id);
+  const room = store.getRoom(id);
+  
   if (!room) {
     createRoom(id, userId);
     return res.status(200).send();
